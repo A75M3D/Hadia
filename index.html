@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Skillzoy Academy | منصة رائدة في التعليم الألكتروني</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body {
+    font-family: 'Cairo', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .card-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .nav-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .nav-button::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #4F46E5 0%, #7C3AED 100%);
+    transition: width 0.3s ease;
+  }
+  
+  .nav-button.active::after {
+    width: 100%;
+  }
+  
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  
+  .progress-bar {
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #e5e7eb;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    background: linear-gradient(90deg, #10b981 0%, #4F46E5 100%);
+  }
+  
+  @media (max-width: 640px) {
+    .mobile-tap-area {
+      min-height: 48px;
+      min-width: 48px;
+    }
+    
+    .nav-button {
+      padding: 12px 8px;
+    }
+    
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+    }
+  }
+  
+  .nav-button:active {
+    transform: scale(0.95);
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .will-change-transform {
+    will-change: transform;
+  }
+  
+  @keyframes pulse-progress {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+  
+  .progress-pulse {
+    animation: pulse-progress 2s infinite;
+  }
+  
+  @keyframes star-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+  
+  .star-pulse {
+    animation: star-pulse 1.5s infinite;
+  }
+
+  /* تحسين عرض الفيديوهات */
+  .video-thumbnail {
+    height: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  @media (max-width: 768px) {
+    .video-thumbnail {
+      height: 180px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .video-thumbnail {
+      height: 160px;
+    }
+  }
+
+  /* تنسيق الأسعار الجديد - عكس الاتجاه */
+  .price-badge {
+    direction: ltr;
+    text-align: left;
+    font-family: 'Cairo', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .price-currency {
+    font-size: 0.9em;
+    color: inherit;
+  }
+  
+  .price-number {
+    font-family: 'Cairo', monospace;
+    font-weight: bold;
+    color: inherit;
+  }
+  
+  /* أنيميشن للشحن */
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  .animate-bounce-slow {
+    animation: bounce-slow 3s infinite;
+  }
+  
+  body {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  /* تأثيرات التدرج */
+  .gradient-border {
+    border: 2px solid transparent;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(135deg, #4F46E5, #7C3AED) border-box;
+  }
+
+  /* spinner */
+  .spinner {
+    border: 3px solid rgba(79, 70, 229, 0.1);
+    border-radius: 50%;
+    border-top: 3px solid #4F46E5;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* فلترة الفئات */
+  .category-filter {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+  
+  .category-filter:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .category-filter.active {
+    border-color: #4F46E5;
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    color: white;
+  }
+  
+  .category-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-si
