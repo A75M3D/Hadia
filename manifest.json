@@ -1,6 +1,6 @@
 {
-  "name": "HADIA PLUS",
-  "short_name":"HadiA",
+  "name": "HADIA Plus",
+  "short_name":"HadiA+",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
