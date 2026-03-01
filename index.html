@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tola - Luxury Bags</title>
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <!-- PWA Manifest - تمت الإزالة بناءً على الطلب -->
+    <!-- <link rel="manifest" href="manifest.json"> -->
     <meta name="theme-color" content="#C26A5A" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#1a0f0c" media="(prefers-color-scheme: dark)">
     <!-- Font Awesome 6 -->
@@ -245,8 +245,7 @@
     </style>
 </head>
 <body class="dark" id="body">
-    <!-- زر التثبيت -->
-    
+    <!-- تم إزالة زر التثبيت (installBtn) نهائياً -->
 
     <!-- شاشة التحميل -->
     <div id="loadingScreen">
@@ -300,7 +299,7 @@
         </header>
 
         <!-- Hero Section - معدل حسب الطلب: صورة خلفية ونص ذهبي واضح -->
-        <section class="relative py-16 md:py-24 overflow-hidden bg-cover bg-center" style="background-image: url('https://i.ibb.co/4w8PZgNV/1772374979603.png');">
+        <section class="relative py-16 md:py-24 overflow-hidden bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1584917865442-b9b5f3c5e1b3?w=1200&auto=format');">
             <!-- طبقة داكنة شفافة لتحسين وضوح النص -->
             <div class="absolute inset-0 bg-black/40"></div>
             <div class="container mx-auto px-4 relative z-10">
@@ -488,7 +487,6 @@
                 deliveryCar: document.getElementById('deliveryCar'),
                 mobileMenuBtn: document.getElementById('mobileMenuBtn'),
                 navLinks: document.getElementById('navLinks'),
-                installBtn: document.getElementById('installBtn'),
                 categoriesGrid: document.getElementById('categoriesGrid'),
                 loadMoreBtn: document.getElementById('loadMoreBtn'),
                 body: document.getElementById('body')
@@ -906,22 +904,7 @@
                 }, 3000);
             }
 
-            // ==================== PWA Installation ====================
-            let deferredPrompt;
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                $.installBtn.hidden = false;
-            });
-
-            $.installBtn.addEventListener('click', async () => {
-                $.installBtn.hidden = true;
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    await deferredPrompt.userChoice;
-                    deferredPrompt = null;
-                }
-            });
+            // ==================== تم إزالة كود PWA بالكامل ====================
 
             // ==================== بدء التحميل ====================
             document.addEventListener('DOMContentLoaded', startLoading);
