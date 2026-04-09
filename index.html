@@ -21,8 +21,9 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome مع crossorigin لضمان التحميل -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous">
   
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -34,10 +35,95 @@
     .view-section { display: none; }
     .view-section.active { display: block; animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23C6A44C'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 0.5rem center; background-size: 1.2em; }
+    select { 
+      appearance: none; 
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23C6A44C'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); 
+      background-repeat: no-repeat; 
+      background-position: left 0.5rem center; 
+      background-size: 1.2em;
+      padding-left: 2rem; /* إفساح مجال للسهم */
+    }
+    
+    /* Onboarding overlay styles */
+    .onboarding-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .onboarding-card {
+      background: white;
+      border-radius: 2.5rem;
+      max-width: 400px;
+      width: 100%;
+      padding: 2rem 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      position: relative;
+      text-align: center;
+    }
+    .step-indicator {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin: 1.5rem 0;
+    }
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 10px;
+      background: #ddd;
+      transition: all 0.3s;
+    }
+    .step-dot.active {
+      width: 24px;
+      background: #C6A44C;
+    }
+    .onboarding-icon {
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 1.5rem;
+      background: #f0f4ff;
+      border-radius: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      color: #1E3A8A;
+    }
+    .pulse-install {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(198, 164, 76, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(198, 164, 76, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(198, 164, 76, 0); }
+    }
+    
+    /* خطة بديلة في حال فشل تحميل Font Awesome */
+    .fa, .fas, .far, .fal, .fab { font-family: 'Font Awesome 6 Free'; }
   </style>
 </head>
 <body class="text-gray-800 pb-24">
+
+  <!-- Onboarding Modal (يظهر فقط للجدد) -->
+  <div id="onboardingModal" class="onboarding-overlay" style="display: none;">
+    <div class="onboarding-card">
+      <button onclick="skipOnboarding()" class="absolute top-4 left-4 text-gray-400 hover:text-gray-600 text-sm font-bold">تخطي</button>
+      <div id="onboardingContent">
+        <!-- ستعبأ ديناميكياً -->
+      </div>
+      <div class="step-indicator" id="stepIndicator"></div>
+      <div class="flex gap-3 mt-4">
+        <button id="onboardingPrev" onclick="prevStep()" class="flex-1 bg-gray-100 text-gray-600 py-4 rounded-2xl font-bold disabled:opacity-50" disabled>السابق</button>
+        <button id="onboardingNext" onclick="nextStep()" class="flex-1 bg-royalDark text-white py-4 rounded-2xl font-bold">التالي</button>
+      </div>
+    </div>
+  </div>
 
   <header class="bg-royal text-white sticky top-0 z-40 shadow-xl rounded-b-[2.5rem] px-6 py-5 flex items-center justify-between">
     <div class="flex items-center gap-3">
@@ -61,13 +147,15 @@
       <div class="space-y-4">
         <div class="grid grid-cols-1 gap-4">
           <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-            <span class="text-[10px] text-gray-400 font-bold block mb-1">محطة المغادرة</span>
+            <span class="text-[10px] text-gray-400 font-bold block mb-1">
+                 اختر محطة المغادرة من القائمة</span>
             <select id="search-from" class="w-full bg-transparent font-bold text-royalDark outline-none">
               <option value="">جاري تحميل المناطق...</option>
             </select>
           </div>
           <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-            <span class="text-[10px] text-gray-400 font-bold block mb-1">محطة الوصول</span>
+            <span class="text-[10px] text-gray-400 font-bold block mb-1">
+                أختر محطة الوصول من القائمة</span>
             <select id="search-to" class="w-full bg-transparent font-bold text-royalDark outline-none">
               <option value="">جاري تحميل المناطق...</option>
             </select>
@@ -162,13 +250,13 @@
     <div class="space-y-3">
       <a href="tel:249123456789" class="bg-white p-5 rounded-2xl flex items-center gap-4 border border-gray-100 shadow-sm">
         <i class="fas fa-phone text-emerald text-xl"></i>
-        <div><p class="text-[10px] text-gray-400 font-bold">الخط الساخن</p><p class="font-bold">249924299798</p></div>
+        <div><p class="text-[10px] text-gray-400 font-bold">الخط الساخن</p><p class="font-bold">249123456789+</p></div>
       </a>
       <a href="#" class="bg-white p-5 rounded-2xl flex items-center gap-4 border border-gray-100 shadow-sm">
         <i class="fas fa-map-marker-alt text-red-500 text-xl"></i>
         <div><p class="text-[10px] text-gray-400 font-bold">المكتب الرئيسي</p><p class="font-bold">الخرطوم - الميناء البري</p></div>
       </a>
-      <a href="https://wa.me/249924299798" class="bg-white p-5 rounded-2xl flex items-center gap-4 border border-gray-100 shadow-sm">
+      <a href="https://wa.me/249123456789" class="bg-white p-5 rounded-2xl flex items-center gap-4 border border-gray-100 shadow-sm">
         <i class="fab fa-whatsapp text-emerald text-xl"></i>
         <div><p class="text-[10px] text-gray-400 font-bold">واتساب الأعمال</p><p class="font-bold">راسلنا الآن</p></div>
       </a>
@@ -185,23 +273,135 @@
 
   <script>
     // ==================== إعدادات Firebase ====================
-    // ⚠️ استبدل هذه القيم بقيم مشروعك من Firebase Console
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAhbOmc45Xx5-7Y_0yr_mNIAawHO-zuYLc",
-  authDomain: "buses-e85e3.firebaseapp.com",
-  projectId: "buses-e85e3",
-  storageBucket: "buses-e85e3.firebasestorage.app",
-  messagingSenderId: "749776297303",
-  appId: "1:749776297303:web:8cc1679168f69fb2d6f212",
-  measurementId: "G-DR5L6E9RWS"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhbOmc45Xx5-7Y_0yr_mNIAawHO-zuYLc",
+      authDomain: "buses-e85e3.firebaseapp.com",
+      projectId: "buses-e85e3",
+      storageBucket: "buses-e85e3.firebasestorage.app",
+      messagingSenderId: "749776297303",
+      appId: "1:749776297303:web:8cc1679168f69fb2d6f212",
+      measurementId: "G-DR5L6E9RWS"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     let bookings = [];
-    let stateList = []; // لتخزين الولايات مع أسماء المدن للعرض
+    let stateList = [];
+    
+    // ==================== Onboarding Logic (مع أيقونات Font Awesome فقط) ====================
+    let currentStep = 0;
+    const steps = [
+      {
+        icon: 'fa-route',
+        title: 'أهلاً بك في النخبة',
+        desc: 'دليلك للسفر المريح والآمن داخل السودان. دعنا نرشدك خلال خطوات بسيطة.',
+        color: 'text-royal'
+      },
+      {
+        icon: 'fa-map-location-dot',
+        title: 'اختر مسار رحلتك',
+        desc: 'حدد محطة المغادرة والوصول من القوائم المنسدلة. نغطي جميع الولايات.',
+        color: 'text-gold'
+      },
+      {
+        icon: 'fa-calendar-check',
+        title: 'حدد التاريخ والركاب',
+        desc: 'اختر تاريخ السفر وعدد المسافرين، ثم اضغط "استعراض الرحلات".',
+        color: 'text-emerald'
+      },
+      {
+        icon: 'fa-ticket',
+        title: 'احجز مقعدك',
+        desc: 'تصفح الرحلات المتاحة، اختر المناسبة لك واضغط "إحجز مقعدك".',
+        color: 'text-royalDark'
+      },
+      {
+        icon: 'fa-whatsapp',
+        title: 'تواصل واستلم تذكرتك',
+        desc: 'بعد تأكيد الحجز، تواصل معنا عبر واتساب لإتمام الدفع واستلام التذكرة فوراً.',
+        color: 'text-green-600'
+      },
+      {
+        icon: 'fa-mobile-screen',
+        title: 'ثبّت التطبيق للوصول السريع',
+        desc: 'استخدم متصفح Chrome، اضغط على ⋮ ثم "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية".',
+        isInstallStep: true,
+        color: 'text-royal'
+      }
+    ];
+
+    function renderOnboardingStep(stepIndex) {
+      const step = steps[stepIndex];
+      const container = document.getElementById('onboardingContent');
+      const indicator = document.getElementById('stepIndicator');
+      const prevBtn = document.getElementById('onboardingPrev');
+      const nextBtn = document.getElementById('onboardingNext');
+      
+      // تحديث المؤشرات
+      indicator.innerHTML = steps.map((_, i) => 
+        `<span class="step-dot ${i === stepIndex ? 'active' : ''}"></span>`
+      ).join('');
+      
+      // أيقونة كبيرة باستخدام Font Awesome فقط
+      const iconHtml = `<div class="onboarding-icon ${step.color}"><i class="fas ${step.icon}"></i></div>`;
+      
+      container.innerHTML = `
+        ${iconHtml}
+        <h3 class="text-2xl font-black mb-3 ${step.color}">${step.title}</h3>
+        <p class="text-gray-600 leading-relaxed">${step.desc}</p>
+        ${step.isInstallStep ? `
+          <div class="mt-6 bg-blue-50 p-4 rounded-2xl text-sm border border-blue-100">
+            <i class="fab fa-chrome text-blue-500 ml-1"></i>
+            <span class="font-bold">نصيحة:</span> إذا لم يظهر خيار التثبيت، انتظر قليلاً أو امسح بيانات المتصفح.
+          </div>
+        ` : ''}
+      `;
+      
+      // أزرار التنقل
+      prevBtn.disabled = (stepIndex === 0);
+      if (stepIndex === steps.length - 1) {
+        nextBtn.textContent = 'ابدأ الاستخدام';
+        nextBtn.classList.add('bg-gold', 'text-royalDark');
+      } else {
+        nextBtn.textContent = 'التالي';
+        nextBtn.classList.remove('bg-gold', 'text-royalDark');
+        nextBtn.classList.add('bg-royalDark', 'text-white');
+      }
+    }
+
+    function nextStep() {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        renderOnboardingStep(currentStep);
+      } else {
+        finishOnboarding();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        renderOnboardingStep(currentStep);
+      }
+    }
+
+    function skipOnboarding() {
+      finishOnboarding();
+    }
+
+    function finishOnboarding() {
+      document.getElementById('onboardingModal').style.display = 'none';
+      localStorage.setItem('elite_onboarding_seen', 'true');
+    }
+
+    function startOnboardingIfNeeded() {
+      const seen = localStorage.getItem('elite_onboarding_seen');
+      if (!seen) {
+        document.getElementById('onboardingModal').style.display = 'flex';
+        renderOnboardingStep(0);
+      }
+    }
 
     // دالة استخراج اسم المدينة من النص الذي يحتوي على قوسين
     function extractCity(fullName) {
@@ -210,13 +410,12 @@ const firebaseConfig = {
       return match ? match[1] : fullName;
     }
 
-    // ==================== تحميل الولايات الفريدة من Firestore ====================
+    // ==================== تحميل الولايات ====================
     async function loadStates() {
       const fromSelect = document.getElementById('search-from');
       const toSelect = document.getElementById('search-to');
       
       try {
-        // نجلب جميع الرحلات لاستخراج قيم from و to الفريدة
         const snapshot = await db.collection("buses").get();
         const fromStates = new Set();
         const toStates = new Set();
@@ -227,7 +426,6 @@ const firebaseConfig = {
           if (data.to) toStates.add(data.to);
         });
         
-        // دمج القيم الفريدة من الحقلين
         const allStates = [...new Set([...fromStates, ...toStates])].sort();
         
         if (allStates.length === 0) {
@@ -238,7 +436,6 @@ const firebaseConfig = {
         
         stateList = allStates;
         
-        // دالة لإنشاء خيارات القائمة مع عرض اسم المدينة فقط
         const renderOptions = (selectedValue = null) => {
           return stateList.map(state => {
             const cityName = extractCity(state);
@@ -247,11 +444,9 @@ const firebaseConfig = {
           }).join('');
         };
         
-        // تعبئة القائمتين
-        fromSelect.innerHTML = renderOptions(stateList[0]); // تحديد أول ولاية افتراضياً
+        fromSelect.innerHTML = renderOptions(stateList[0]);
         toSelect.innerHTML = renderOptions(stateList[0] === stateList[stateList.length-1] ? stateList[0] : stateList[1] || stateList[0]);
         
-        // محاولة جعل الوصول مختلفاً عن المغادرة افتراضياً
         if (stateList.length > 1) {
           toSelect.value = stateList[1];
         }
@@ -263,7 +458,7 @@ const firebaseConfig = {
       }
     }
 
-    // ==================== جلب الرحلات مع الفلترة حسب المسار ====================
+    // ==================== جلب الرحلات ====================
     async function renderBuses() {
       const container = document.getElementById('buses-container');
       const from = document.getElementById('search-from').value;
@@ -297,7 +492,7 @@ const firebaseConfig = {
         container.innerHTML = buses.map(bus => `
           <div class="bg-white rounded-[2.5rem] shadow-md border border-gray-100 overflow-hidden">
             <div class="relative h-48">
-              <img src="${bus.img || 'https://via.placeholder.com/400x200?text=Elite+Bus'}" class="h-full w-full object-cover" alt="${bus.name}">
+              <img src="${bus.img || 'https://images.pexels.com/photos/2790386/pexels-photo-2790386.jpeg?auto=compress&cs=tinysrgb&w=600'}" class="h-full w-full object-cover" alt="${bus.name}">
               <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
               <div class="absolute bottom-4 right-4 text-white">
                 <h4 class="text-2xl font-black">${bus.name}</h4>
@@ -333,7 +528,7 @@ const firebaseConfig = {
       }
     }
 
-    // ==================== حجز رحلة ====================
+    // ==================== حجز رحلة (مع محاكاة دفع) ====================
     async function bookTrip(busId) {
       try {
         const busDoc = await db.collection("buses").doc(busId).get();
@@ -360,23 +555,29 @@ const firebaseConfig = {
           totalPrice: bus.price * passengers,
           status: "مؤكد",
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          contactWhatsApp: "+249924299798"
+          contactWhatsApp: "249123456789"
         };
         
-        const docRef = await db.collection("bookings").add(bookingData);
-        
-        const localBooking = {
-          id: docRef.id,
-          ...bookingData,
-          total: bookingData.totalPrice
-        };
-        bookings.push(localBooking);
-        updateBookingsUI();
-        
-        switchTab('bookings');
-        
-        const message = `حجز جديد: ${bus.name} من ${extractCity(bus.from)} إلى ${extractCity(bus.to)} بتاريخ ${date} - عدد الركاب ${passengers} - الإجمالي ${bookingData.totalPrice} ج.س`;
-        window.open(`https://wa.me/${bookingData.contactWhatsApp}?text=${encodeURIComponent(message)}`, '_blank');
+        // محاكاة عملية دفع سريعة
+        if (confirm(`تأكيد حجز ${passengers} مقعد في رحلة ${bus.name}\nالإجمالي: ${bookingData.totalPrice.toLocaleString()} ج.س\nاضغط موافق لمتابعة الدفع (محاكاة)`)) {
+          const docRef = await db.collection("bookings").add(bookingData);
+          
+          const localBooking = {
+            id: docRef.id,
+            ...bookingData,
+            total: bookingData.totalPrice
+          };
+          bookings.push(localBooking);
+          updateBookingsUI();
+          
+          // عرض رسالة نجاح مع إرسال التذكرة فوراً
+          alert(`✅ تم الحجز بنجاح!\nسيتم تحويلك إلى واتساب لاستلام التذكرة.`);
+          
+          const message = `*تأكيد حجز رحلة النخبة*\n\n🚌 ${bus.name} (${bus.type})\n📍 من: ${extractCity(bus.from)} → إلى: ${extractCity(bus.to)}\n📅 ${date} | ⏰ الإقلاع: ${bus.depTime}\n👥 الركاب: ${passengers}\n💵 الإجمالي: ${bookingData.totalPrice.toLocaleString()} ج.س\n\n🔖 رقم الحجز: ${docRef.id.slice(0,6).toUpperCase()}\n\nشكراً لثقتكم بنا. نتمنى لكم رحلة سعيدة.`;
+          
+          window.open(`https://wa.me/${bookingData.contactWhatsApp}?text=${encodeURIComponent(message)}`, '_blank');
+          switchTab('bookings');
+        }
         
       } catch (error) {
         console.error("خطأ في الحجز:", error);
@@ -420,11 +621,27 @@ const firebaseConfig = {
 
     // ==================== تهيئة الصفحة ====================
     window.onload = async () => {
-      await loadStates(); // تحميل المناطق أولاً
+      await loadStates();
+      startOnboardingIfNeeded(); // إظهار الدليل للمستخدمين الجدد
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(err => console.log);
       }
+      
+      // إضافة مستمع لحدث beforeinstallprompt لتشجيع التثبيت
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+      });
     };
+
+    // تعريض الدوال للنطاق العام
+    window.switchTab = switchTab;
+    window.renderBuses = renderBuses;
+    window.bookTrip = bookTrip;
+    window.nextStep = nextStep;
+    window.prevStep = prevStep;
+    window.skipOnboarding = skipOnboarding;
   </script>
 </body>
 </html>
