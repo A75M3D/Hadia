@@ -1,981 +1,430 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html dir="rtl" lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hadeal Store - عطور فاخرة</title>
-    <!-- تمت إزالة الـ manifest بناءً على الطلب -->
-    <meta name="theme-color" content="#8A2BE2" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#2D0F44" media="(prefers-color-scheme: dark)">
-    <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts - Playfair Display & Cairo -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs (compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <style>
-        /* متغيرات الألوان للثيمات - ألوان عطور فاخرة (ذهبي وبنفسجي) */
-        :root {
-            /* Light theme (افتراضي) */
-            --primary-light: #8A2BE2; /* بنفسجي */
-            --primary-dark: #6B1FA9; /* بنفسجي داكن */
-            --secondary-light: #D4AF37; /* ذهبي */
-            --secondary-dark: #B89440; /* ذهبي داكن */
-            --bg-light: #faf3f0; /* بيج فاتح */
-            --bg-dark: #1E0A2B; /* بنفسجي غامق جدًا */
-            --text-light: #1a1a1a;
-            --text-dark: #ffffff;
-            --card-bg-light: rgba(255, 245, 240, 0.85);
-            --card-bg-dark: rgba(46, 15, 68, 0.85);
-            --border-light: rgba(138, 43, 226, 0.2);
-            --border-dark: rgba(212, 175, 55, 0.3);
-            --shadow-light: 0 8px 32px rgba(0, 0, 0, 0.1);
-            --shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.5);
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>النخبة للسفريات - خدمات النقل الفاخر</title>
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1E3A8A">
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/192/1E3A8A/C6A44C?text=Elite">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { royal: '#1E3A8A', royalDark: '#0F172A', gold: '#C6A44C', emerald: '#059669' },
+          fontFamily: { cairo: ['Cairo', 'sans-serif'] }
         }
-
-        /* ثيم داكن */
-        body.dark {
-            --primary: var(--primary-light);
-            --secondary: var(--secondary-light);
-            --bg: var(--bg-dark);
-            --text: var(--text-dark);
-            --card-bg: var(--card-bg-dark);
-            --border: var(--border-dark);
-            --shadow: var(--shadow-dark);
-        }
-        /* ثيم فاتح */
-        body:not(.dark) {
-            --primary: var(--primary-dark);
-            --secondary: var(--secondary-dark);
-            --bg: var(--bg-light);
-            --text: var(--text-light);
-            --card-bg: var(--card-bg-light);
-            --border: var(--border-light);
-            --shadow: var(--shadow-light);
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Cairo', 'Playfair Display', sans-serif;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            min-height: 100vh;
-            direction: rtl;
-        }
-
-        h1, h2, h3, .logo, .font-serif {
-            font-family: 'Playfair Display', serif;
-        }
-
-        /* شاشة التحميل */
-        #loadingScreen {
-            position: fixed;
-            inset: 0;
-            background: var(--bg-dark);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            transition: opacity 0.8s ease, visibility 0.8s ease;
-        }
-        #loadingScreen.fade-out {
-            opacity: 0;
-            visibility: hidden;
-        }
-        .loading-truck {
-            position: absolute;
-            font-size: 80px;
-            color: var(--secondary-light);
-            bottom: 20%;
-            left: -100px;
-            filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5));
-            transition: left 3s cubic-bezier(0.2, 0.9, 0.3, 1);
-        }
-        .loading-truck.active { left: 120%; }
-        .loading-logo {
-            font-size: clamp(2rem, 10vw, 3.5rem);
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--secondary-light), var(--primary-light));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 1s ease 0.5s;
-        }
-        .loading-logo.show { opacity: 1; transform: translateY(0); }
-        .loading-progress {
-            width: min(300px, 80%);
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            margin-top: 30px;
-            overflow: hidden;
-            opacity: 0;
-            transition: opacity 1s ease 1s;
-        }
-        .loading-progress.show { opacity: 1; }
-        .loading-progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--secondary-light), var(--primary-light));
-            transition: width 3s ease 1.5s;
-        }
-
-        /* أنيميشن عام */
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        .fade-in-up { animation: fadeInUp 0.6s ease forwards; }
-
-        /* تخصيص شريط التمرير */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--border); }
-        ::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
-        /* تحسين البطاقات */
-        .product-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 1.5rem;
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
-            backdrop-filter: blur(5px);
-            opacity: 0;
-            animation: fadeInUp 0.5s ease forwards;
-        }
-        .product-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 20px var(--secondary);
-        }
-        .product-card.selected {
-            animation: intenseGlow 1.5s ease;
-        }
-        @keyframes intenseGlow {
-            0%, 100% { box-shadow: var(--shadow); }
-            50% { box-shadow: 0 0 30px var(--secondary), 0 0 60px var(--primary); }
-        }
-
-        /* تأثير الزجاج المحسن */
-        .glass {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-        }
-
-        /* أزرار ذهبية */
-        .btn-gold {
-            background: linear-gradient(135deg, var(--secondary), #b88a2f);
-            color: #1a0f0c;
-            font-weight: 600;
-            border: none;
-            transition: all 0.3s;
-        }
-        .btn-gold:hover {
-            background: linear-gradient(135deg, #c99f3f, var(--secondary));
-            transform: scale(1.05);
-            box-shadow: 0 0 20px var(--secondary);
-        }
-
-        /* Toast محسّن - يظهر في الأسفل للجوال */
-        #toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px); /* مخفي في الأسفل */
-            background: var(--primary);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 10000;
-            transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
-            font-weight: 600;
-            border: 1px solid var(--secondary);
-        }
-        #toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-        #toast.error {
-            background: #c0392b;
-            border-color: #e74c3c;
-        }
-
-        /* سلة التسوق */
-        .cart-sidebar {
-            background: var(--card-bg);
-            backdrop-filter: blur(15px);
-            border-left: 1px solid var(--border);
-        }
-
-        /* تحسين القائمة في الجوال */
-        @media (max-width: 768px) {
-            .nav-links {
-                position: absolute;
-                top: 100%;
-                left: 0;
-                width: 100%;
-                background: var(--card-bg);
-                backdrop-filter: blur(15px);
-                border-bottom: 1px solid var(--border);
-                padding: 1rem;
-                display: none;
-                flex-direction: column;
-                gap: 0.5rem;
-                z-index: 50;
-            }
-            .nav-links.active { display: flex; }
-            .nav-links a { padding: 0.75rem; border-radius: 0.75rem; }
-        }
-
-        /* العنصر الطائر للأنيميشن */
-        .flying-item {
-            position: fixed;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--secondary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 0 20px gold;
-            z-index: 10001;
-            pointer-events: none;
-            transition: all 0.8s cubic-bezier(0.2, 0.9, 0.4, 1);
-            opacity: 1;
-        }
-        .flying-item img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-    </style>
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  
+  <style>
+    body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .view-section { display: none; }
+    .view-section.active { display: block; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23C6A44C'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 0.5rem center; background-size: 1.2em; }
+  </style>
 </head>
-<body class="dark" id="body">
-    <!-- تم إزالة زر التثبيت نهائياً -->
+<body class="text-gray-800 pb-24">
 
-    <!-- شاشة التحميل -->
-    <div id="loadingScreen">
-        <div class="loading-truck"><i class="fas fa-truck"></i></div>
-        <div class="loading-logo">Hadeal</div>
-        <div class="loading-progress"><div class="loading-progress-bar"></div></div>
+  <header class="bg-royal text-white sticky top-0 z-40 shadow-xl rounded-b-[2.5rem] px-6 py-5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
+        <i class="fas fa-bus-alt text-gold text-2xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-extrabold tracking-tight">النخبة</h1>
+        <p class="text-[10px] text-blue-200 font-bold opacity-80 uppercase">Elite Travel Sudan</p>
+      </div>
+    </div>
+    <div class="bg-gold/20 p-2 rounded-full border border-gold/30">
+      <i class="fas fa-headset text-gold"></i>
+    </div>
+  </header>
+
+  <!-- الرئيسية -->
+  <main id="view-home" class="view-section active px-4 pt-6">
+    <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-6 mb-8">
+      <h2 class="text-lg font-bold mb-5 flex items-center gap-2 text-royalDark"><i class="fas fa-search-location text-gold"></i> حجز رحلة جديدة</h2>
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 gap-4">
+          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+            <span class="text-[10px] text-gray-400 font-bold block mb-1">محطة المغادرة</span>
+            <select id="search-from" class="w-full bg-transparent font-bold text-royalDark outline-none">
+              <option value="">جاري تحميل المناطق...</option>
+            </select>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+            <span class="text-[10px] text-gray-400 font-bold block mb-1">محطة الوصول</span>
+            <select id="search-to" class="w-full bg-transparent font-bold text-royalDark outline-none">
+              <option value="">جاري تحميل المناطق...</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <div class="flex-1 bg-gray-50 rounded-2xl p-4 border border-gray-200">
+            <span class="text-[10px] text-gray-400 font-bold block mb-1">تاريخ السفر</span>
+            <input type="date" id="search-date" class="w-full bg-transparent font-bold text-sm outline-none" value="2026-04-15">
+          </div>
+          <div class="w-1/3 bg-gray-50 rounded-2xl p-4 border border-gray-200">
+            <span class="text-[10px] text-gray-400 font-bold block mb-1">الركاب</span>
+            <select id="search-passengers" class="w-full bg-transparent font-bold outline-none">
+              <script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">${i}</option>`)</script>
+            </select>
+          </div>
+        </div>
+        <button onclick="renderBuses()" class="w-full bg-royalDark text-white font-extrabold py-5 rounded-[1.5rem] shadow-xl hover:bg-black transition-all transform active:scale-95">استعراض الرحلات المتاحة</button>
+      </div>
     </div>
 
-    <!-- المحتوى الرئيسي -->
-    <div class="main-content hidden" id="mainContent">
-        <!-- سيارة التوصيل -->
-        <div id="deliveryCar" class="fixed bottom-1/2 left-1/2 -translate-x-1/2 text-7xl text-amber-400 drop-shadow-[0_0_30px_rgba(212,175,55,0.8)] z-[10000] opacity-0 transition-all duration-1000 pointer-events-none">
-            <i class="fas fa-truck"></i>
+    <h3 class="text-xl font-black text-royalDark mb-6 px-2">الرحلات المختارة</h3>
+    <div id="buses-container" class="space-y-6 pb-10">
+      <div class="text-center py-10 text-gray-400">اختر مساراً واضغط "استعراض الرحلات"</div>
+    </div>
+  </main>
+
+  <!-- الخدمات -->
+  <main id="view-services" class="view-section px-4 pt-6">
+    <h2 class="text-2xl font-black mb-6 text-royalDark">خدمات النخبة المميزة</h2>
+    <div class="grid grid-cols-1 gap-4">
+      <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex gap-4 items-center">
+        <div class="w-16 h-16 bg-blue-100 text-royal rounded-2xl flex items-center justify-center text-2xl shrink-0"><i class="fas fa-wifi"></i></div>
+        <div>
+          <h4 class="font-bold text-lg">إنترنت مجاني</h4>
+          <p class="text-sm text-gray-500">استمتع بخدمة الواي فاي عالية السرعة طوال مدة الرحلة.</p>
         </div>
-
-        <!-- Header -->
-        <header class="sticky top-0 z-50 glass">
-            <div class="container mx-auto px-4">
-                <div class="flex items-center justify-between h-20">
-                    <button class="md:hidden text-2xl hover:text-amber-400 transition" id="mobileMenuBtn">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div class="logo text-3xl md:text-4xl font-extrabold bg-gradient-to-l from-amber-400 to-purple-500 bg-clip-text text-transparent cursor-pointer" onclick="window.scrollTo({top:0,behavior:'smooth'})">
-                        Hadeal
-                    </div>
-                    
-                    <nav class="nav-links hidden md:flex gap-2" id="navLinks">
-                        <a href="#" class="px-4 py-2 rounded-xl hover:bg-purple-600 hover:text-black transition font-medium" data-page="home">الرئيسية</a>
-                        <a href="#" class="px-4 py-2 rounded-xl hover:bg-purple-600 hover:text-black transition font-medium" data-page="admin">إدارة المنتجات</a>
-                        <a href="#" class="px-4 py-2 rounded-xl hover:bg-purple-600 hover:text-black transition font-medium" data-page="categories">الفئات</a>
-                        <a href="#" class="px-4 py-2 rounded-xl hover:bg-purple-600 hover:text-black transition font-medium" data-page="about">عن المتجر</a>
-                        <a href="#" class="px-4 py-2 rounded-xl hover:bg-purple-600 hover:text-black transition font-medium" data-page="contact">اتصل بنا</a>
-                    </nav>
-                    
-                    <div class="flex items-center gap-2 md:gap-3">
-                        <button id="themeToggle" class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-amber-500/20 flex items-center justify-center text-xl hover:scale-110 transition" aria-label="تبديل الثيم">
-                            <i class="fas fa-sun hidden dark:inline"></i>
-                            <i class="fas fa-moon inline dark:hidden"></i>
-                        </button>
-                        <button class="relative w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-amber-500/20 flex items-center justify-center text-xl hover:scale-110 transition" aria-label="المفضلة">
-                            <i class="far fa-heart"></i>
-                            <span class="absolute -top-1 -right-1 bg-purple-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">0</span>
-                        </button>
-                        <button id="cartButton" class="relative w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-amber-500/20 flex items-center justify-center text-xl hover:scale-110 transition" aria-label="السلة">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span id="cartCount" class="absolute -top-1 -right-1 bg-purple-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">0</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Hero Section - معدل باسم Hadeal وعطور -->
-        <section class="relative py-16 md:py-24 overflow-hidden bg-cover bg-center" style="background-image: url('https://res.cloudinary.com/dim7huhc3/image/upload/v1773242441/IMG-20260311-WA0049_blrndi.jpg');">
-            <!-- طبقة داكنة شفافة -->
-            <div class="absolute inset-0 bg-black/50"></div>
-            <div class="container mx-auto px-4 relative z-10">
-                <div class="max-w-4xl mx-auto text-center">
-                    <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 text-amber-400 drop-shadow-lg">
-                        Hadeal
-                    </h1>
-                    <p class="text-lg md:text-xl lg:text-2xl text-amber-100 drop-shadow-md mb-8 max-w-2xl mx-auto leading-relaxed">
-                        اكتشفي عالم من الفخامة والأناقة مع أحدث تشكيلات العطور المصممة خصيصًا لإطلالتك المميزة.
-                    </p>
-                    <button id="shopNowBtn" class="btn-gold px-8 py-4 rounded-full text-lg font-semibold shadow-lg transition inline-flex items-center gap-2">
-                        <i class="fas fa-gem"></i> استكشف العطور
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Categories Section (Leo & Dancer) -->
-        <section class="py-16">
-            <div class="container mx-auto px-4">
-                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-12 bg-gradient-to-l from-amber-400 to-purple-500 bg-clip-text text-transparent">
-                    الفئات
-                </h2>
-                <div id="categoriesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8"></div>
-            </div>
-        </section>
-
-        <!-- Products Section -->
-        <section class="py-16">
-            <div class="container mx-auto px-4">
-                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-12 bg-gradient-to-l from-amber-400 to-purple-500 bg-clip-text text-transparent">
-                    عطورنا المميزة
-                </h2>
-                
-                <!-- منتجات grid -->
-                <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8"></div>
-
-                <!-- مؤشر التحميل -->
-                <div id="productsLoader" class="text-center py-20 hidden">
-                    <i class="fas fa-circle-notch text-5xl text-amber-500 loading-spinner"></i>
-                    <p class="mt-4 text-lg opacity-70">جاري تحميل العطور...</p>
-                </div>
-
-                <!-- زر تحميل المزيد -->
-                <div class="text-center mt-12">
-                    <button id="loadMoreBtn" class="glass px-8 py-3 rounded-full hover:bg-purple-600 hover:text-black transition inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hidden">
-                        <i class="fas fa-spinner hidden loading-spinner"></i> تحميل المزيد
-                    </button>
-                </div>
-
-                <!-- حالة عدم وجود منتجات -->
-                <div id="emptyState" class="text-center py-20 hidden">
-                    <i class="fas fa-spray-can text-7xl opacity-30 mb-4"></i>
-                    <p class="text-xl opacity-70">لا توجد عطور متاحة حالياً</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Cart Sidebar -->
-        <div id="cartSidebar" class="cart-sidebar fixed top-0 left-0 w-full md:w-96 h-full shadow-2xl z-[2000] p-6 transform -translate-x-full transition-transform duration-400 overflow-y-auto">
-            <div class="flex justify-between items-center pb-4 border-b border-amber-500/20">
-                <h2 class="text-2xl font-bold font-serif">سلة التسوق</h2>
-                <button id="closeCart" class="text-2xl hover:text-amber-400 transition"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div id="cartItems" class="py-4 space-y-4 min-h-[200px]"></div>
-            
-            <div class="mt-auto pt-4 border-t border-amber-500/20 sticky bottom-0 bg-inherit">
-                <div class="flex justify-between text-xl font-bold mb-4">
-                    <span>المجموع:</span>
-                    <span id="cartTotal">0 ج.س</span>
-                </div>
-                <div class="space-y-3">
-                    <button id="continueShopping" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl transition">
-                        مواصلة التسوق
-                    </button>
-                    <button id="whatsappOrder" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl transition flex items-center justify-center gap-2">
-                        <i class="fab fa-whatsapp"></i> طلب عبر واتساب
-                    </button>
-                </div>
-            </div>
+      </div>
+      <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex gap-4 items-center">
+        <div class="w-16 h-16 bg-green-100 text-emerald rounded-2xl flex items-center justify-center text-2xl shrink-0"><i class="fas fa-couch"></i></div>
+        <div>
+          <h4 class="font-bold text-lg">مقاعد VIP مريحة</h4>
+          <p class="text-sm text-gray-500">مقاعد جلدية واسعة قابلة للطي لضمان راحة تامة أثناء السفر.</p>
         </div>
+      </div>
+      <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex gap-4 items-center">
+        <div class="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center text-2xl shrink-0"><i class="fas fa-utensils"></i></div>
+        <div>
+          <h4 class="font-bold text-lg">وجبات ضيافة</h4>
+          <p class="text-sm text-gray-500">نقدم وجبات خفيفة ومشروبات باردة وساخنة مجانية لركابنا.</p>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex gap-4 items-center">
+        <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl shrink-0"><i class="fas fa-shield-alt"></i></div>
+        <div>
+          <h4 class="font-bold text-lg">أمان ومراقبة</h4>
+          <p class="text-sm text-gray-500">نظام تتبع GPS لجميع الباصات مع سائقين ذوي خبرة وكفاءة عالية.</p>
+        </div>
+      </div>
+    </div>
+  </main>
 
-        <!-- Overlay -->
-        <div id="overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1500] hidden transition-opacity"></div>
+  <!-- تذاكري -->
+  <main id="view-bookings" class="view-section px-4 pt-6">
+    <h2 class="text-2xl font-black mb-6 text-royalDark">تذاكري</h2>
+    <div id="bookings-list" class="space-y-4">
+      <div class="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-300">
+        <i class="fas fa-ticket-alt text-5xl text-gray-200 mb-4 block"></i>
+        <p class="text-gray-400 font-bold">لا توجد حجوزات نشطة حالياً</p>
+      </div>
+    </div>
+  </main>
 
-        <!-- Toast Notification (سيظهر في الأسفل) -->
-        <div id="toast"></div>
-
-        <!-- Footer -->
-        <footer class="glass py-12 mt-20">
-            <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <h3 class="text-2xl font-bold mb-4 font-serif">Hadeal</h3>
-                    <p class="opacity-70 mb-4 leading-relaxed">نقدم أفخم العطور الشرقية والغربية بأجود الخامات لإطلالة لا تُنسى.</p>
-                    <div class="flex gap-3">
-                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-amber-500 transition"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-amber-500 transition"><i class="fab fa-tiktok"></i></a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-amber-500 transition"><i class="fab fa-facebook-f"></i></a>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4 text-lg">روابط سريعة</h4>
-                    <ul class="space-y-2 opacity-70">
-                        <li><a href="#" class="hover:text-amber-400 transition">الرئيسية</a></li>
-                        <li><a href="#" class="hover:text-amber-400 transition">إدارة المنتجات</a></li>
-                        <li><a href="#" class="hover:text-amber-400 transition">عروض خاصة</a></li>
-                        <li><a href="#" class="hover:text-amber-400 transition">اتصل بنا</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4 text-lg">خدمة العملاء</h4>
-                    <ul class="space-y-2 opacity-70">
-                        <li><a href="#" class="hover:text-amber-400 transition">الشحن والتوصيل</a></li>
-                        <li><a href="#" class="hover:text-amber-400 transition">سياسة الإرجاع</a></li>
-                        <li><a href="#" class="hover:text-amber-400 transition">أسئلة شائعة</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4 text-lg">اتصل بنا</h4>
-                    <ul class="space-y-2 opacity-70">
-                        <li class="flex items-center gap-2"><i class="fas fa-phone text-amber-400"></i>+249 924 299 798</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-envelope text-amber-400"></i> info@hadeal.com</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-map-marker-alt text-amber-400"></i> الخرطوم، السودان</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="text-center pt-8 mt-8 border-t border-amber-500/20 opacity-50 text-sm">
-                <p>جميع الحقوق محفوظة &copy; 2026 Hadeal. عطور فاخرة ♥🥀</p>
-            </div>
-        </footer>
+  <!-- عن النخبة -->
+  <main id="view-about" class="view-section px-4 pt-6">
+    <div class="bg-royalDark text-white p-8 rounded-[2.5rem] mb-6">
+      <h2 class="text-3xl font-black mb-4">النخبة للسفريات</h2>
+      <p class="text-blue-100 leading-relaxed mb-6">نحن شركة رائدة في مجال النقل البري في السودان، نسعى لتقديم تجربة سفر آمنة، مريحة، وبأحدث الأساطيل السياحية التي تربط بين كافة ولاياتنا الحبيبة.</p>
+      <div class="flex gap-4">
+        <div class="flex-1 bg-white/10 p-4 rounded-2xl text-center border border-white/10">
+          <p class="text-gold font-bold text-xl">+18</p>
+          <p class="text-[10px] uppercase">ولاية نغطيها</p>
+        </div>
+        <div class="flex-1 bg-white/10 p-4 rounded-2xl text-center border border-white/10">
+          <p class="text-gold font-bold text-xl">24/7</p>
+          <p class="text-[10px] uppercase">دعم فني</p>
+        </div>
+      </div>
     </div>
 
-    <script>
-        (function() {
-            // ==================== إعدادات Firebase ====================
-            const firebaseConfig = {
-                apiKey: "AIzaSyBhuvfhNeumOBcDeeDoj884YAMMObT2D5U",
-                authDomain: "store-edf0a.firebaseapp.com",
-                projectId: "store-edf0a",
-                storageBucket: "store-edf0a.firebasestorage.app",
-                messagingSenderId: "520046449398",
-                appId: "1:520046449398:web:dca21f13cb567ea960d2d7",
-                measurementId: "G-31M9W1PM3D"
-            };
-            firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
+    <h4 class="font-bold mb-4 px-2">تواصل معنا</h4>
+    <div class="space-y-3">
+      <a href="tel:249123456789" class="bg-white p-5 rounded-2xl flex items-center gap-4 border border-gray-100 shadow-sm">
+        <i class="fas fa-phone text-emerald text-xl"></i>
+        <div><p class="text-[10px] text-gray-400 font-bold">الخط الساخن</p><p class="font-bold">249924299798</p></div>
+      </a>
+      <a href="#" class="bg-white p-5 rounded-2xl flex items-center gap-4 border border-gray-100 shadow-sm">
+        <i class="fas fa-map-marker-alt text-red-500 text-xl"></i>
+        <div><p class="text-[10px] text-gray-400 font-bold">المكتب الرئيسي</p><p class="font-bold">الخرطوم - الميناء البري</p></div>
+      </a>
+      <a href="https://wa.me/249924299798" class="bg-white p-5 rounded-2xl flex items-center gap-4 border border-gray-100 shadow-sm">
+        <i class="fab fa-whatsapp text-emerald text-xl"></i>
+        <div><p class="text-[10px] text-gray-400 font-bold">واتساب الأعمال</p><p class="font-bold">راسلنا الآن</p></div>
+      </a>
+    </div>
+  </main>
 
-            // ==================== إدارة الحالة ====================
-            const state = {
-                cart: JSON.parse(localStorage.getItem('hadealCart')) || [],
-                products: [],
-                categories: [],
-                currentCategory: 'الكل',
-                lastVisible: null,
-                loadingMore: false,
-                hasMore: true,
-                isLoading: false,
-                toastTimer: null
-            };
+  <!-- شريط التنقل السفلي -->
+  <nav class="fixed bottom-6 left-6 right-6 bg-royalDark/90 backdrop-blur-xl border border-white/10 px-6 py-4 rounded-[2rem] flex justify-between items-center z-50 shadow-2xl">
+    <button onclick="switchTab('home')" id="nav-home" class="nav-btn text-gold flex flex-col items-center gap-1"><i class="fas fa-home text-lg"></i><span class="text-[9px] font-bold">الرئيسية</span></button>
+    <button onclick="switchTab('services')" id="nav-services" class="nav-btn text-gray-400 flex flex-col items-center gap-1"><i class="fas fa-star text-lg"></i><span class="text-[9px] font-bold">الخدمات</span></button>
+    <button onclick="switchTab('bookings')" id="nav-bookings" class="nav-btn text-gray-400 flex flex-col items-center gap-1"><i class="fas fa-ticket-alt text-lg"></i><span class="text-[9px] font-bold">تذاكري</span></button>
+    <button onclick="switchTab('about')" id="nav-about" class="nav-btn text-gray-400 flex flex-col items-center gap-1"><i class="fas fa-info-circle text-lg"></i><span class="text-[9px] font-bold">عن النخبة</span></button>
+  </nav>
 
-            // عناصر DOM
-            const $ = {
-                loadingScreen: document.getElementById('loadingScreen'),
-                mainContent: document.getElementById('mainContent'),
-                loadingTruck: document.querySelector('.loading-truck'),
-                loadingLogo: document.querySelector('.loading-logo'),
-                loadingProgressBar: document.querySelector('.loading-progress-bar'),
-                themeToggle: document.getElementById('themeToggle'),
-                cartButton: document.getElementById('cartButton'),
-                cartSidebar: document.getElementById('cartSidebar'),
-                closeCart: document.getElementById('closeCart'),
-                overlay: document.getElementById('overlay'),
-                cartItems: document.getElementById('cartItems'),
-                cartTotal: document.getElementById('cartTotal'),
-                cartCount: document.getElementById('cartCount'),
-                continueShopping: document.getElementById('continueShopping'),
-                whatsappOrder: document.getElementById('whatsappOrder'),
-                productsGrid: document.getElementById('productsGrid'),
-                productsLoader: document.getElementById('productsLoader'),
-                emptyState: document.getElementById('emptyState'),
-                shopNowBtn: document.getElementById('shopNowBtn'),
-                toast: document.getElementById('toast'),
-                deliveryCar: document.getElementById('deliveryCar'),
-                mobileMenuBtn: document.getElementById('mobileMenuBtn'),
-                navLinks: document.getElementById('navLinks'),
-                categoriesGrid: document.getElementById('categoriesGrid'),
-                loadMoreBtn: document.getElementById('loadMoreBtn'),
-                body: document.getElementById('body')
-            };
+  <script>
+    // ==================== إعدادات Firebase ====================
+    // ⚠️ استبدل هذه القيم بقيم مشروعك من Firebase Console
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAhbOmc45Xx5-7Y_0yr_mNIAawHO-zuYLc",
+  authDomain: "buses-e85e3.firebaseapp.com",
+  projectId: "buses-e85e3",
+  storageBucket: "buses-e85e3.firebasestorage.app",
+  messagingSenderId: "749776297303",
+  appId: "1:749776297303:web:8cc1679168f69fb2d6f212",
+  measurementId: "G-DR5L6E9RWS"
+};
 
-            // ==================== التهيئة والتحميل ====================
-            function startLoading() {
-                setTimeout(() => $.loadingTruck.classList.add('active'), 500);
-                setTimeout(() => {
-                    $.loadingLogo.classList.add('show');
-                    document.querySelector('.loading-progress').classList.add('show');
-                    $.loadingProgressBar.style.width = '100%';
-                }, 2000);
-                setTimeout(() => {
-                    $.loadingScreen.classList.add('fade-out');
-                    setTimeout(() => {
-                        $.loadingScreen.style.display = 'none';
-                        $.mainContent.classList.remove('hidden');
-                        initializeApp();
-                    }, 800);
-                }, 4500);
-            }
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-            async function initializeApp() {
-                setupEventListeners();
-                applySavedTheme();
-                await loadCategories();
-                await loadInitialProducts();
-                updateCartUI();
-            }
+    let bookings = [];
+    let stateList = []; // لتخزين الولايات مع أسماء المدن للعرض
 
-            function setupEventListeners() {
-                $.themeToggle.addEventListener('click', toggleTheme);
-                $.cartButton.addEventListener('click', openCart);
-                $.closeCart.addEventListener('click', closeCart);
-                $.overlay.addEventListener('click', closeCart);
-                $.continueShopping.addEventListener('click', closeCart);
-                $.whatsappOrder.addEventListener('click', sendWhatsAppOrder);
-                $.shopNowBtn.addEventListener('click', () => $.productsGrid.scrollIntoView({ behavior: 'smooth' }));
-                $.mobileMenuBtn.addEventListener('click', () => $.navLinks.classList.toggle('active'));
-                $.loadMoreBtn.addEventListener('click', loadMoreProducts);
-                
-                // روابط التنقل
-                document.querySelectorAll('.nav-links a').forEach(link => {
-                    link.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        // يمكن إضافة معالجة الصفحات هنا
-                    });
-                });
+    // دالة استخراج اسم المدينة من النص الذي يحتوي على قوسين
+    function extractCity(fullName) {
+      if (!fullName) return '';
+      const match = fullName.match(/\(([^)]+)\)/);
+      return match ? match[1] : fullName;
+    }
 
-                // إغلاق القائمة عند النقر على رابط في الجوال
-                $.navLinks.querySelectorAll('a').forEach(link => {
-                    link.addEventListener('click', () => $.navLinks.classList.remove('active'));
-                });
-            }
+    // ==================== تحميل الولايات الفريدة من Firestore ====================
+    async function loadStates() {
+      const fromSelect = document.getElementById('search-from');
+      const toSelect = document.getElementById('search-to');
+      
+      try {
+        // نجلب جميع الرحلات لاستخراج قيم from و to الفريدة
+        const snapshot = await db.collection("buses").get();
+        const fromStates = new Set();
+        const toStates = new Set();
+        
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.from) fromStates.add(data.from);
+          if (data.to) toStates.add(data.to);
+        });
+        
+        // دمج القيم الفريدة من الحقلين
+        const allStates = [...new Set([...fromStates, ...toStates])].sort();
+        
+        if (allStates.length === 0) {
+          fromSelect.innerHTML = '<option value="">لا توجد مناطق مضافة</option>';
+          toSelect.innerHTML = '<option value="">لا توجد مناطق مضافة</option>';
+          return;
+        }
+        
+        stateList = allStates;
+        
+        // دالة لإنشاء خيارات القائمة مع عرض اسم المدينة فقط
+        const renderOptions = (selectedValue = null) => {
+          return stateList.map(state => {
+            const cityName = extractCity(state);
+            const selected = (selectedValue === state) ? 'selected' : '';
+            return `<option value="${state}" ${selected}>${cityName}</option>`;
+          }).join('');
+        };
+        
+        // تعبئة القائمتين
+        fromSelect.innerHTML = renderOptions(stateList[0]); // تحديد أول ولاية افتراضياً
+        toSelect.innerHTML = renderOptions(stateList[0] === stateList[stateList.length-1] ? stateList[0] : stateList[1] || stateList[0]);
+        
+        // محاولة جعل الوصول مختلفاً عن المغادرة افتراضياً
+        if (stateList.length > 1) {
+          toSelect.value = stateList[1];
+        }
+        
+      } catch (error) {
+        console.error("خطأ في تحميل المناطق:", error);
+        fromSelect.innerHTML = '<option value="">خطأ في التحميل</option>';
+        toSelect.innerHTML = '<option value="">خطأ في التحميل</option>';
+      }
+    }
 
-            // ==================== الثيم ====================
-            function toggleTheme() {
-                $.body.classList.toggle('dark');
-                localStorage.setItem('theme', $.body.classList.contains('dark') ? 'dark' : 'light');
-            }
+    // ==================== جلب الرحلات مع الفلترة حسب المسار ====================
+    async function renderBuses() {
+      const container = document.getElementById('buses-container');
+      const from = document.getElementById('search-from').value;
+      const to = document.getElementById('search-to').value;
+      
+      if (!from || !to) {
+        container.innerHTML = '<div class="text-center py-10 text-gray-400">الرجاء اختيار محطتي المغادرة والوصول</div>';
+        return;
+      }
+      
+      container.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-pulse text-2xl text-gold"></i><p class="mt-2">جاري تحميل الرحلات...</p></div>';
+      
+      try {
+        const snapshot = await db.collection("buses")
+          .where("from", "==", from)
+          .where("to", "==", to)
+          .get();
+        
+        const buses = [];
+        snapshot.forEach(doc => buses.push({ id: doc.id, ...doc.data() }));
+        
+        if (buses.length === 0) {
+          container.innerHTML = `<div class="text-center py-10 bg-white rounded-2xl border border-gray-200">
+            <i class="fas fa-route text-5xl text-gray-300 mb-4"></i>
+            <p class="font-bold text-gray-500">لا توجد رحلات متاحة من ${extractCity(from)} إلى ${extractCity(to)}</p>
+            <p class="text-sm text-gray-400 mt-2">جرب البحث عن مسار آخر</p>
+          </div>`;
+          return;
+        }
+        
+        container.innerHTML = buses.map(bus => `
+          <div class="bg-white rounded-[2.5rem] shadow-md border border-gray-100 overflow-hidden">
+            <div class="relative h-48">
+              <img src="${bus.img || 'https://via.placeholder.com/400x200?text=Elite+Bus'}" class="h-full w-full object-cover" alt="${bus.name}">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+              <div class="absolute bottom-4 right-4 text-white">
+                <h4 class="text-2xl font-black">${bus.name}</h4>
+                <p class="text-xs text-gold font-bold uppercase">${bus.type}</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="flex justify-between items-center mb-6 bg-blue-50/50 p-4 rounded-3xl border border-blue-100">
+                <div class="text-right">
+                  <p class="text-[10px] text-gray-400 font-bold mb-1">جهة التحرك: ${extractCity(bus.from)}</p>
+                  <p class="font-black text-xl text-royalDark">${bus.depTime}</p>
+                </div>
+                <div class="flex-1 flex flex-col items-center px-4">
+                  <i class="fas fa-bus text-gold mb-1"></i>
+                  <div class="w-full border-t border-dashed border-gray-300"></div>
+                </div>
+                <div class="text-left">
+                  <p class="text-[10px] text-gray-400 font-bold mb-1">جهة الوصول: ${extractCity(bus.to)}</p>
+                  <p class="font-black text-xl text-emerald">${bus.arrTime}</p>
+                </div>
+              </div>
+              <div class="flex justify-between items-center">
+                <div><p class="text-[10px] text-gray-400 font-bold">سعر التذكرة</p><p class="font-black text-2xl text-royalDark">${bus.price.toLocaleString()}<span class="text-xs mr-1 font-normal">ج.س</span></p></div>
+                <button onclick="bookTrip('${bus.id}')" class="bg-gold text-royalDark px-8 py-4 rounded-2xl font-black text-sm shadow-lg shadow-gold/20 active:scale-95 transition-all">إحجز مقعدك</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+        
+      } catch (error) {
+        console.error("خطأ في جلب الرحلات:", error);
+        container.innerHTML = '<div class="text-center py-10 text-red-500">حدث خطأ أثناء تحميل الرحلات. تأكد من اتصالك بالإنترنت.</div>';
+      }
+    }
 
-            function applySavedTheme() {
-                const saved = localStorage.getItem('theme');
-                if (saved === 'light') $.body.classList.remove('dark');
-                else $.body.classList.add('dark'); // افتراضي dark
-            }
+    // ==================== حجز رحلة ====================
+    async function bookTrip(busId) {
+      try {
+        const busDoc = await db.collection("buses").doc(busId).get();
+        if (!busDoc.exists) {
+          alert("الرحلة غير موجودة");
+          return;
+        }
+        const bus = busDoc.data();
+        
+        const passengers = parseInt(document.getElementById('search-passengers').value);
+        const date = document.getElementById('search-date').value;
+        
+        const bookingData = {
+          busId: busId,
+          busName: bus.name,
+          busType: bus.type,
+          from: bus.from,
+          to: bus.to,
+          date: date,
+          depTime: bus.depTime,
+          arrTime: bus.arrTime,
+          passengers: passengers,
+          pricePerSeat: bus.price,
+          totalPrice: bus.price * passengers,
+          status: "مؤكد",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          contactWhatsApp: "249123456789"
+        };
+        
+        const docRef = await db.collection("bookings").add(bookingData);
+        
+        const localBooking = {
+          id: docRef.id,
+          ...bookingData,
+          total: bookingData.totalPrice
+        };
+        bookings.push(localBooking);
+        updateBookingsUI();
+        
+        switchTab('bookings');
+        
+        const message = `حجز جديد: ${bus.name} من ${extractCity(bus.from)} إلى ${extractCity(bus.to)} بتاريخ ${date} - عدد الركاب ${passengers} - الإجمالي ${bookingData.totalPrice} ج.س`;
+        window.open(`https://wa.me/${bookingData.contactWhatsApp}?text=${encodeURIComponent(message)}`, '_blank');
+        
+      } catch (error) {
+        console.error("خطأ في الحجز:", error);
+        alert("حدث خطأ أثناء عملية الحجز. الرجاء المحاولة مرة أخرى.");
+      }
+    }
 
-            // ==================== الفئات (Leo & Dancer) ====================
-            async function loadCategories() {
-                // فئتان فقط: Leo و Dancer
-                state.categories = [
-                    { id: '1', name: 'Leo', image: 'https://res.cloudinary.com/dim7huhc3/image/upload/v1773244042/1773243656271_zw4xps.png', description: 'عطور جريئة وقوية تناسب الشخصية القيادية' },
-                    { id: '2', name: 'Dancer', image: 'https://res.cloudinary.com/dim7huhc3/image/upload/v1773244045/1773243704138_zcnnuv.png', description: 'عطور راقصة وحالمة تنبعث منها الأنوثة والرشاقة' }
-                ];
-                renderCategories();
-            }
+    function updateBookingsUI() {
+      const list = document.getElementById('bookings-list');
+      if(bookings.length > 0) {
+        list.innerHTML = bookings.map(b => `
+          <div class="bg-white p-6 rounded-[2rem] border-r-8 border-gold shadow-sm">
+            <div class="flex justify-between items-start mb-4">
+              <div><h4 class="font-black text-lg">${b.busName}</h4><p class="text-xs text-gray-500">${b.date} - ${b.depTime}</p></div>
+              <span class="bg-emerald/10 text-emerald text-[10px] font-bold px-3 py-1 rounded-full uppercase">${b.status || 'مؤكد'}</span>
+            </div>
+            <div class="flex items-center gap-3 mb-5 text-sm font-bold">
+              <span>${extractCity(b.from)}</span><i class="fas fa-arrow-left text-gold"></i><span>${extractCity(b.to)}</span>
+            </div>
+            <div class="flex justify-between items-center border-t border-gray-50 pt-4">
+              <div><p class="text-[10px] text-gray-400 font-bold">الركاب: ${b.passengers}</p><p class="font-black text-royalDark">${b.totalPrice.toLocaleString()} ج.س</p></div>
+              <a href="https://wa.me/${b.contactWhatsApp || '249123456789'}?text=${encodeURIComponent('تفاصيل الحجز: ' + b.busName + ' من ' + extractCity(b.from) + ' إلى ' + extractCity(b.to) + ' بتاريخ ' + b.date)}" class="bg-[#25D366] text-white px-5 py-3 rounded-xl text-xs font-bold flex items-center gap-2"><i class="fab fa-whatsapp text-lg"></i> تأكيد الطلب</a>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        list.innerHTML = `<div class="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-300">
+          <i class="fas fa-ticket-alt text-5xl text-gray-200 mb-4 block"></i>
+          <p class="text-gray-400 font-bold">لا توجد حجوزات نشطة حالياً</p>
+        </div>`;
+      }
+    }
 
-            function renderCategories() {
-                $.categoriesGrid.innerHTML = state.categories.map(cat => `
-                    <div class="group cursor-pointer" onclick="window.filterByCategory('${cat.name}')">
-                        <div class="relative overflow-hidden rounded-2xl glass aspect-[3/4]">
-                            <img src="${cat.image}" alt="${cat.name}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                            <div class="absolute bottom-0 p-6">
-                                <h3 class="text-3xl font-bold text-white mb-2">${cat.name}</h3>
-                                <p class="text-white/80 text-sm mb-3">${cat.description}</p>
-                                <div class="flex items-center text-amber-400 font-semibold">
-                                    <span>تسوق الآن</span>
-                                    <i class="fas fa-arrow-left mr-2 group-hover:translate-x-2 transition"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-            }
+    function switchTab(t) {
+      document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(n => n.classList.replace('text-gold', 'text-gray-400'));
+      document.getElementById('view-'+t).classList.add('active');
+      document.getElementById('nav-'+t).classList.replace('text-gray-400', 'text-gold');
+      window.scrollTo(0,0);
+    }
 
-            window.filterByCategory = function(categoryName) {
-                state.currentCategory = categoryName;
-                resetPagination();
-                loadInitialProducts(true);
-                $.productsGrid.scrollIntoView({ behavior: 'smooth' });
-            };
-
-            // ==================== المنتجات ====================
-            function resetPagination() {
-                state.lastVisible = null;
-                state.hasMore = true;
-                state.products = [];
-                $.productsGrid.innerHTML = '';
-                $.loadMoreBtn.style.display = 'none';
-            }
-
-            async function loadInitialProducts(forceReload = false) {
-                // كاش بسيط
-                const cacheKey = `hadeal_products_${state.currentCategory}`;
-                const cached = localStorage.getItem(cacheKey);
-                if (cached && !forceReload) {
-                    const { products, timestamp } = JSON.parse(cached);
-                    if (Date.now() - timestamp < 72 * 60 * 60 * 1000) { // 72 ساعة
-                        state.products = products;
-                        renderProducts();
-                        return;
-                    }
-                }
-
-                $.productsLoader.classList.remove('hidden');
-                $.productsGrid.classList.add('hidden');
-                await loadProductsFromFirestore(true);
-                $.productsLoader.classList.add('hidden');
-                $.productsGrid.classList.remove('hidden');
-            }
-
-            async function loadProductsFromFirestore(replace = false) {
-                if (state.loadingMore) return;
-                state.loadingMore = true;
-                if (!replace) {
-                    $.loadMoreBtn.disabled = true;
-                    $.loadMoreBtn.classList.add('loading');
-                    $.loadMoreBtn.querySelector('i').style.display = 'inline-block';
-                }
-
-                try {
-                    // ملاحظة: تأكد من أن مجموعة 'users' تحتوي على منتجات عطور أو يمكن تغيير المجموعة إلى 'perfumes'
-                    let query = db.collection('users').orderBy('created_at', 'desc').limit(12);
-                    if (state.lastVisible) query = query.startAfter(state.lastVisible);
-                    
-                    const snapshot = await query.get();
-                    
-                    if (!snapshot.empty) {
-                        const newProducts = snapshot.docs.map(doc => {
-                            const data = doc.data();
-                            // تعديل البيانات لتناسب العطور، مع تصنيف Leo/Dancer عشوائي أو بناءً على البيانات
-                            const category = data.category || (Math.random() > 0.5 ? 'Leo' : 'Dancer');
-                            return {
-                                id: doc.id,
-                                name: data.name || 'عطر فاخر',
-                                category: category,
-                                price: data.price || 0,
-                                image_url: data.image_url || 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=500&auto=format',
-                                rating: data.rating || (Math.random() * 2 + 3).toFixed(1),
-                                original_price: data.original_price || null,
-                                colors: data.colors || ['عنبر', 'مسك', 'فانيلا']
-                            };
-                        });
-
-                        state.lastVisible = snapshot.docs[snapshot.docs.length - 1];
-                        state.hasMore = snapshot.docs.length === 12;
-                        state.products = replace ? newProducts : [...state.products, ...newProducts];
-
-                        // تخزين الكاش
-                        const cacheKey = `hadeal_products_${state.currentCategory}`;
-                        localStorage.setItem(cacheKey, JSON.stringify({
-                            products: state.products,
-                            timestamp: Date.now()
-                        }));
-
-                        renderProducts();
-                        $.loadMoreBtn.style.display = state.hasMore ? 'inline-flex' : 'none';
-                    } else {
-                        if (replace) state.products = [];
-                        renderProducts();
-                        state.hasMore = false;
-                        $.loadMoreBtn.style.display = 'none';
-                    }
-                } catch (error) {
-                    console.error('خطأ في تحميل المنتجات:', error);
-                    showToast('حدث خطأ في التحميل', true);
-                    if (state.products.length === 0) $.emptyState.classList.remove('hidden');
-                } finally {
-                    state.loadingMore = false;
-                    $.loadMoreBtn.disabled = false;
-                    $.loadMoreBtn.classList.remove('loading');
-                    if ($.loadMoreBtn.querySelector('i')) $.loadMoreBtn.querySelector('i').style.display = 'none';
-                }
-            }
-
-            async function loadMoreProducts() {
-                if (!state.hasMore || state.loadingMore) return;
-                await loadProductsFromFirestore(false);
-            }
-
-            function renderProducts() {
-                const filtered = state.currentCategory === 'الكل' 
-                    ? state.products 
-                    : state.products.filter(p => p.category === state.currentCategory);
-
-                if (filtered.length === 0) {
-                    $.emptyState.classList.remove('hidden');
-                    $.productsGrid.innerHTML = '';
-                    return;
-                }
-
-                $.emptyState.classList.add('hidden');
-                
-                $.productsGrid.innerHTML = filtered.map(product => {
-                    const rating = parseFloat(product.rating) || 0;
-                    const stars = Array.from({ length: 5 }, (_, i) => {
-                        if (i < Math.floor(rating)) return 'fas fa-star';
-                        if (i < rating) return 'fas fa-star-half-alt';
-                        return 'far fa-star';
-                    }).map(cls => `<i class="${cls} text-amber-400"></i>`).join('');
-
-                    return `
-                    <div class="product-card" data-id="${product.id}">
-                        <div class="relative overflow-hidden h-64">
-                            <img src="${product.image_url}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" loading="lazy">
-                            ${product.original_price ? '<span class="absolute top-4 right-4 bg-purple-600 text-white px-3 py-1 rounded-full text-sm">خصم</span>' : ''}
-                        </div>
-                        <div class="p-5">
-                            <span class="inline-block px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full text-sm mb-3">${product.category}</span>
-                            <h3 class="text-xl font-bold mb-2 font-serif">${product.name}</h3>
-                            <div class="flex items-center gap-2 mb-3">${stars}<span class="opacity-60 text-sm">(${product.rating})</span></div>
-                            <div class="flex gap-2 mb-4 flex-wrap">
-                                ${product.colors.map(color => `<div class="w-6 h-6 rounded-full border-2 border-amber-500/50" style="background-color: ${getColorHex(color)}; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" title="${color}"></div>`).join('')}
-                            </div>
-                            <div class="flex items-center gap-3 mb-4">
-                                <span class="text-2xl font-bold text-amber-400">${product.price} ج.س</span>
-                                ${product.original_price ? `<span class="opacity-50 line-through">${product.original_price} ج.س</span>` : ''}
-                            </div>
-                            <button class="add-to-cart w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl transition flex items-center justify-center gap-2" data-id="${product.id}" data-image="${product.image_url}" data-name="${product.name}">
-                                <i class="fas fa-cart-plus"></i> أضف إلى السلة
-                            </button>
-                        </div>
-                    </div>
-                `}).join('');
-
-                // إضافة event listeners
-                document.querySelectorAll('.add-to-cart').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const id = btn.dataset.id;
-                        const product = state.products.find(p => p.id === id);
-                        if (product) {
-                            addToCart(product, btn);
-                            // تشغيل أنيميشن الطيران
-                            flyToCart(btn, product.image_url);
-                        }
-                    });
-                });
-            }
-
-            function getColorHex(color) {
-                const map = {
-                    'عنبر': '#C26A5A',
-                    'مسك': '#D4AF37',
-                    'فانيلا': '#F5DEB3',
-                    'ورد': '#FF69B4',
-                    'خشب الصندل': '#8B4513',
-                    'ياسمين': '#F8F9D7'
-                };
-                return map[color] || '#CCCCCC';
-            }
-
-            // ==================== أنيميشن الطيران إلى السلة ====================
-            function flyToCart(button, imageUrl) {
-                // الحصول على موقع الزر
-                const btnRect = button.getBoundingClientRect();
-                // الحصول على موقع أيقونة السلة
-                const cartIconRect = $.cartButton.getBoundingClientRect();
-
-                // إنشاء العنصر الطائر
-                const flyingItem = document.createElement('div');
-                flyingItem.className = 'flying-item';
-                // يمكن وضع صورة مصغرة أو أيقونة عطر
-                flyingItem.innerHTML = `<img src="${imageUrl}" alt="product" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
-                document.body.appendChild(flyingItem);
-
-                // تعيين نقطة البداية
-                flyingItem.style.left = (btnRect.left + btnRect.width / 2 - 25) + 'px';
-                flyingItem.style.top = (btnRect.top + window.scrollY - 25) + 'px'; // نطرح نصف الارتفاع (25)
-                flyingItem.style.transform = 'scale(1)';
-                flyingItem.style.opacity = '1';
-
-                // بعد إعادة رسم صغيرة، نحركه إلى السلة
-                setTimeout(() => {
-                    flyingItem.style.left = (cartIconRect.left + cartIconRect.width / 2 - 25) + 'px';
-                    flyingItem.style.top = (cartIconRect.top + window.scrollY - 25) + 'px';
-                    flyingItem.style.transform = 'scale(0.2)';
-                    flyingItem.style.opacity = '0.5';
-                }, 50);
-
-                // إزالته بعد الانتهاء
-                setTimeout(() => {
-                    flyingItem.remove();
-                    // نبض بسيط للسلة
-                    $.cartButton.style.transform = 'scale(1.2)';
-                    setTimeout(() => $.cartButton.style.transform = 'scale(1)', 200);
-                }, 800);
-            }
-
-            // ==================== سلة التسوق ====================
-            function addToCart(product, button) {
-                const existing = state.cart.find(item => item.id === product.id);
-                if (existing) {
-                    existing.quantity += 1;
-                } else {
-                    state.cart.push({
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        image_url: product.image_url,
-                        quantity: 1
-                    });
-                }
-
-                // تأثير على البطاقة
-                const card = button.closest('.product-card');
-                if (card) {
-                    card.classList.add('selected');
-                    setTimeout(() => card.classList.remove('selected'), 1500);
-                }
-
-                updateCartUI();
-                saveCart();
-                showToast('تمت الإضافة إلى السلة');
-
-                // حركة زر السلة (مكرر لكن الأنيميشن السابق يقوم بها)
-            }
-
-            function updateCartUI() {
-                const totalItems = state.cart.reduce((sum, item) => sum + item.quantity, 0);
-                $.cartCount.textContent = totalItems;
-
-                if (state.cart.length === 0) {
-                    $.cartItems.innerHTML = '<div class="text-center py-10 opacity-50"><i class="fas fa-shopping-cart text-5xl mb-4"></i><p>السلة فارغة</p></div>';
-                } else {
-                    $.cartItems.innerHTML = state.cart.map(item => `
-                        <div class="flex gap-3 glass p-3 rounded-xl">
-                            <img src="${item.image_url}" alt="${item.name}" class="w-20 h-20 object-cover rounded-lg" loading="lazy">
-                            <div class="flex-1">
-                                <h4 class="font-bold font-serif">${item.name}</h4>
-                                <p class="text-amber-400 font-semibold">${item.price} ج.س</p>
-                                <div class="flex items-center gap-2 mt-2">
-                                    <button class="decrease w-8 h-8 rounded-full bg-white/10 hover:bg-amber-500 transition" data-id="${item.id}"><i class="fas fa-minus text-xs"></i></button>
-                                    <span class="w-6 text-center">${item.quantity}</span>
-                                    <button class="increase w-8 h-8 rounded-full bg-white/10 hover:bg-amber-500 transition" data-id="${item.id}"><i class="fas fa-plus text-xs"></i></button>
-                                    <button class="remove-item mr-auto text-rose-500 hover:text-rose-700 transition" data-id="${item.id}"><i class="fas fa-trash"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-
-                    // إضافة الأحداث
-                    $.cartItems.querySelectorAll('.decrease').forEach(btn => {
-                        btn.addEventListener('click', () => changeQuantity(btn.dataset.id, -1));
-                    });
-                    $.cartItems.querySelectorAll('.increase').forEach(btn => {
-                        btn.addEventListener('click', () => changeQuantity(btn.dataset.id, 1));
-                    });
-                    $.cartItems.querySelectorAll('.remove-item').forEach(btn => {
-                        btn.addEventListener('click', () => removeFromCart(btn.dataset.id));
-                    });
-                }
-
-                const total = state.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                $.cartTotal.textContent = total.toFixed(2) + ' ج.س';
-            }
-
-            function changeQuantity(id, delta) {
-                const item = state.cart.find(i => i.id === id);
-                if (!item) return;
-                item.quantity += delta;
-                if (item.quantity <= 0) {
-                    removeFromCart(id);
-                } else {
-                    updateCartUI();
-                    saveCart();
-                }
-            }
-
-            function removeFromCart(id) {
-                state.cart = state.cart.filter(i => i.id !== id);
-                updateCartUI();
-                saveCart();
-                showToast('تمت الإزالة من السلة');
-            }
-
-            function saveCart() {
-                localStorage.setItem('hadealCart', JSON.stringify(state.cart));
-            }
-
-            // ==================== واجهات جانبية ====================
-            function openCart() {
-                $.cartSidebar.classList.remove('-translate-x-full');
-                $.overlay.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeCart() {
-                $.cartSidebar.classList.add('-translate-x-full');
-                $.overlay.classList.add('hidden');
-                document.body.style.overflow = 'auto';
-            }
-
-            function sendWhatsAppOrder() {
-                if (state.cart.length === 0) {
-                    showToast('السلة فارغة', true);
-                    return;
-                }
-
-                // تحريك السيارة
-                $.deliveryCar.classList.add('opacity-100');
-                setTimeout(() => {
-                    $.deliveryCar.classList.add('translate-x-full', 'opacity-0');
-                }, 1000);
-
-                setTimeout(() => {
-                    let message = 'مرحباً، أريد طلب عطور:\n';
-                    state.cart.forEach(item => {
-                        message += `- ${item.name} (${item.quantity}) - ${item.price * item.quantity} ج.س\n`;
-                    });
-                    const total = state.cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-                    message += `\nالمجموع: ${total} ج.س`;
-
-                    window.open(`https://wa.me/249924299798?text=${encodeURIComponent(message)}`, '_blank');
-
-                    // إعادة السيارة
-                    setTimeout(() => {
-                        $.deliveryCar.classList.remove('translate-x-full', 'opacity-0');
-                    }, 2000);
-                }, 1500);
-            }
-
-            // ==================== Toast (يظهر في الأسفل) ====================
-            function showToast(message, isError = false) {
-                if (state.toastTimer) clearTimeout(state.toastTimer);
-                $.toast.textContent = message;
-                $.toast.classList.toggle('error', isError);
-                $.toast.classList.add('show');
-                state.toastTimer = setTimeout(() => {
-                    $.toast.classList.remove('show');
-                }, 3000);
-            }
-
-            // ==================== بدء التحميل ====================
-            document.addEventListener('DOMContentLoaded', startLoading);
-
-            // حماية بسيطة للكود
-            (() => {
-                document.addEventListener('keydown', (e) => {
-                    if ((e.ctrlKey && e.shiftKey && ['I', 'C', 'J'].includes(e.key)) || e.key === 'F12') {
-                        e.preventDefault();
-                    }
-                });
-                document.addEventListener('contextmenu', e => e.preventDefault());
-            })();
-        })();
-    </script>
+    // ==================== تهيئة الصفحة ====================
+    window.onload = async () => {
+      await loadStates(); // تحميل المناطق أولاً
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log);
+      }
+    };
+  </script>
 </body>
 </html>
