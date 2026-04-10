@@ -216,6 +216,68 @@
       color: #e2e8f0;
     }
     .dark input::placeholder { color: #64748b; }
+
+    /* نافذة الدفع */
+    .payment-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .payment-modal .modal-content {
+      background: white;
+      width: 100%;
+      max-width: 450px;
+      border-radius: 2.5rem 2.5rem 2rem 2rem;
+      padding: 1.5rem;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .dark .payment-modal .modal-content {
+      background: #1E293B;
+      color: #e2e8f0;
+    }
+    .copyable {
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .copyable:active {
+      background-color: #f0f0f0;
+    }
+    .dark .copyable:active {
+      background-color: #2d3748;
+    }
+    .copy-feedback {
+      position: absolute;
+      background: #1E3A8A;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 2rem;
+      font-size: 0.7rem;
+      top: -25px;
+      left: 0;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .payment-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
   </style>
 </head>
 <body class="text-gray-800 pb-24">
@@ -229,6 +291,132 @@
       <div class="flex gap-3 mt-4">
         <button id="onboardingPrev" onclick="prevStep()" class="flex-1 bg-gray-100 text-gray-600 py-4 rounded-2xl font-bold disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300" disabled>السابق</button>
         <button id="onboardingNext" onclick="nextStep()" class="flex-1 bg-royalDark text-white py-4 rounded-2xl font-bold">التالي</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة الدفع Modal -->
+  <div id="paymentModal" class="payment-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-black text-royalDark dark:text-white">تأكيد الحجز</h3>
+        <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <i class="fas fa-times-circle text-2xl"></i>
+        </button>
+      </div>
+      
+      <!-- ملخص الرحلة -->
+      <div id="paymentTripSummary" class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-2xl mb-5 border border-gray-200 dark:border-gray-600">
+        <!-- يتم ملؤه ديناميكياً -->
+      </div>
+      
+      <!-- تنبيه المبلغ المطلوب -->
+      <div class="bg-gold/10 border border-gold/30 rounded-2xl p-4 mb-5 flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center text-gold text-xl">
+          <i class="fas fa-coins"></i>
+        </div>
+        <div>
+          <p class="font-bold text-royalDark dark:text-white">ادفع 5,000 جنيه فقط لتأمين مقعدك</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">المبلغ المتبقي يُدفع قبل الرحلة</p>
+        </div>
+      </div>
+      
+      <!-- خيارات الدفع -->
+      <div class="space-y-4 mb-6">
+        <h4 class="font-bold text-gray-600 dark:text-gray-300 text-sm">اختر طريقة الدفع:</h4>
+        
+        <!-- بنكك -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="payment-icon bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+              <i class="fas fa-building-columns"></i>
+            </div>
+            <span class="font-black text-lg dark:text-white">بنكك</span>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-500 dark:text-gray-400">اسم المستفيد:</span>
+              <span class="font-bold dark:text-white">انس أمين</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-500 dark:text-gray-400">رقم الحساب:</span>
+              <span class="font-mono font-bold text-lg copyable" onclick="copyToClipboard('2480512', this)" data-copy="2480512">
+                2480512
+                <i class="far fa-copy mr-2 text-gold"></i>
+                <span class="copy-feedback">تم النسخ!</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- فوري -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="payment-icon bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+              <i class="fas fa-mobile-alt"></i>
+            </div>
+            <span class="font-black text-lg dark:text-white">فوري</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-500 dark:text-gray-400">رقم الهاتف:</span>
+            <span class="font-mono font-bold text-lg copyable" onclick="copyToClipboard('51690879', this)" data-copy="51690879">
+              51690879
+              <i class="far fa-copy mr-2 text-gold"></i>
+              <span class="copy-feedback">تم النسخ!</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- أوكاش -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="payment-icon bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+              <i class="fas fa-wallet"></i>
+            </div>
+            <span class="font-black text-lg dark:text-white">أوكاش</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-500 dark:text-gray-400">رقم الحساب:</span>
+            <span class="font-mono font-bold text-lg copyable" onclick="copyToClipboard('1331525', this)" data-copy="1331525">
+              1331525
+              <i class="far fa-copy mr-2 text-gold"></i>
+              <span class="copy-feedback">تم النسخ!</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- المشرق -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="payment-icon bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              <i class="fas fa-building-columns"></i>
+            </div>
+            <span class="font-black text-lg dark:text-white">المشرق</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-500 dark:text-gray-400">رقم الحساب:</span>
+            <span class="font-mono font-bold text-lg copyable" onclick="copyToClipboard('64498707', this)" data-copy="64498707">
+              64498707
+              <i class="far fa-copy mr-2 text-gold"></i>
+              <span class="copy-feedback">تم النسخ!</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- تعليمات -->
+      <div class="text-xs text-gray-500 dark:text-gray-400 mb-5 bg-blue-50/50 dark:bg-blue-900/20 p-3 rounded-xl">
+        <i class="fas fa-info-circle ml-1 text-royal"></i>
+        بعد إتمام الدفع، اضغط على "رفع الإيصال" لإرسال صورة الإيصال عبر واتساب وتأكيد حجزك.
+      </div>
+      
+      <!-- أزرار الإجراء -->
+      <div class="flex gap-3">
+        <button onclick="closePaymentModal()" class="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-4 rounded-2xl font-bold">إلغاء</button>
+        <button onclick="proceedToUploadReceipt()" class="flex-1 bg-royalDark text-white py-4 rounded-2xl font-bold shadow-lg shadow-royalDark/20 flex items-center justify-center gap-2">
+          <i class="fab fa-whatsapp"></i>
+          رفع الإيصال
+        </button>
       </div>
     </div>
   </div>
@@ -336,8 +524,7 @@
       </div>
       <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex gap-4 items-center">
         <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl shrink-0"><i class="fas fa-shield-alt"></i></div>
-        <div><h4 class="font-bold text-lg">أمان ومراقبة</h4><p class="text-sm text-gray-500 dark:text-gray-400">
-            أعلى مستوى أمان و سائقين ذوي خبرة وكفاءة عالية.</p></div>
+        <div><h4 class="font-bold text-lg">أمان ومراقبة</h4><p class="text-sm text-gray-500 dark:text-gray-400">أعلى مستوى أمان و سائقين ذوي خبرة وكفاءة عالية.</p></div>
       </div>
     </div>
   </main>
@@ -412,6 +599,11 @@
     let currentFilter = 'all';
     let busNamesList = [];
     
+    // بيانات الرحلة الحالية المختارة للدفع
+    let currentBookingBus = null;
+    let currentBookingPassengers = 1;
+    let currentBookingDate = '';
+
     // ==================== دوال الكاش ====================
     function getCachedData(key) {
       try {
@@ -738,7 +930,7 @@
       `).join('');
     }
 
-    // ==================== حجز رحلة ====================
+    // ==================== حجز رحلة (يفتح نافذة الدفع) ====================
     async function bookTrip(busId) {
       try {
         const busDoc = await db.collection("buses").doc(busId).get();
@@ -749,42 +941,134 @@
         const bus = busDoc.data();
         const passengers = parseInt(document.getElementById('search-passengers').value);
         const date = document.getElementById('search-date').value;
-        const totalPrice = bus.price * passengers;
         
-        const bookingData = {
-          busId, busName: bus.name, busType: bus.type,
-          from: bus.from, to: bus.to, date,
-          depTime: bus.depTime, arrTime: bus.arrTime,
-          passengers, pricePerSeat: bus.price, totalPrice,
-          status: "مؤكد",
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          contactWhatsApp: WHATSAPP_NUMBER
-        };
+        // حفظ بيانات الرحلة الحالية للاستخدام في نافذة الدفع
+        currentBookingBus = { id: busId, ...bus };
+        currentBookingPassengers = passengers;
+        currentBookingDate = date;
         
-        // حفظ الحجز في Firestore
-        db.collection("bookings").add(bookingData).then(docRef => {
-          bookings.push({ id: docRef.id, ...bookingData, total: totalPrice });
-          updateBookingsUI();
-        }).catch(err => console.error("خطأ في حفظ الحجز:", err));
+        // فتح نافذة الدفع
+        openPaymentModal();
         
-        // تجهيز رسالة واتساب والتوجيه فوراً
+      } catch (error) {
+        console.error("خطأ في تجهيز الحجز:", error);
+        alert("حدث خطأ أثناء تجهيز الحجز. الرجاء المحاولة مرة أخرى.");
+      }
+    }
+
+    // ==================== وظائف نافذة الدفع ====================
+    function openPaymentModal() {
+      if (!currentBookingBus) return;
+      
+      const bus = currentBookingBus;
+      const passengers = currentBookingPassengers;
+      const date = currentBookingDate;
+      const totalPrice = bus.price * passengers;
+      const depositAmount = 5000; // العربون
+      
+      // ملء ملخص الرحلة
+      const summaryDiv = document.getElementById('paymentTripSummary');
+      summaryDiv.innerHTML = `
+        <div class="flex items-center gap-3 mb-2">
+          <i class="fas fa-bus text-gold"></i>
+          <span class="font-black">${bus.name} (${bus.type})</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span>${extractCity(bus.from)} → ${extractCity(bus.to)}</span>
+          <span>${date} | ${bus.depTime}</span>
+        </div>
+        <div class="flex justify-between text-sm mt-2">
+          <span>عدد الركاب: ${passengers}</span>
+          <span>الإجمالي: ${totalPrice.toLocaleString()} ج.س</span>
+        </div>
+        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 flex justify-between items-center">
+          <span class="font-bold">المطلوب كعربون:</span>
+          <span class="font-black text-gold text-xl">5,000 ج.س</span>
+        </div>
+      `;
+      
+      document.getElementById('paymentModal').style.display = 'flex';
+    }
+    
+    function closePaymentModal() {
+      document.getElementById('paymentModal').style.display = 'none';
+    }
+    
+    function copyToClipboard(text, element) {
+      navigator.clipboard.writeText(text).then(() => {
+        const feedback = element.querySelector('.copy-feedback');
+        if (feedback) {
+          feedback.style.opacity = '1';
+          setTimeout(() => { feedback.style.opacity = '0'; }, 1500);
+        }
+      }).catch(err => {
+        alert('تعذر النسخ. الرجاء النسخ يدوياً.');
+      });
+    }
+    
+    async function proceedToUploadReceipt() {
+      if (!currentBookingBus) return;
+      
+      const bus = currentBookingBus;
+      const passengers = currentBookingPassengers;
+      const date = currentBookingDate;
+      const totalPrice = bus.price * passengers;
+      
+      // إنشاء الحجز في Firestore
+      const bookingData = {
+        busId: bus.id, busName: bus.name, busType: bus.type,
+        from: bus.from, to: bus.to, date,
+        depTime: bus.depTime, arrTime: bus.arrTime,
+        passengers, pricePerSeat: bus.price, totalPrice,
+        status: "قيد التأكيد (بانتظار الإيصال)",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        contactWhatsApp: WHATSAPP_NUMBER,
+        paymentAccounts: {
+          bankak: '2480512',
+          fawry: '51690879',
+          okash: '1331525',
+          mashreq: '64498707',
+          name: 'انس أمين'
+        }
+      };
+      
+      try {
+        const docRef = await db.collection("bookings").add(bookingData);
+        
+        // تجهيز رسالة واتساب مع تفاصيل الحجز وبيانات الدفع
         const message = `*تأكيد حجز رحلة تزكرتي*\n\n` +
-          `مرحبا اريد حجز تزكرة:\n` +
-          `🚌 ${bus.name} (${bus.type})\n` +
+          `مرحباً، أود تأكيد حجز التذكرة التالية:\n` +
+          `🚌 *${bus.name}* (${bus.type})\n` +
           `📍 من: ${extractCity(bus.from)} → إلى: ${extractCity(bus.to)}\n` +
           `📅 ${date} | ⏰ الإقلاع: ${bus.depTime}\n` +
           `👥 الركاب: ${passengers}\n` +
-          `💵 الإجمالي: ${totalPrice.toLocaleString()} ج.س\n\n` +
-          `عايز تفاصيل حجز التزكرة وشكرا`;
+          `💵 الإجمالي: ${totalPrice.toLocaleString()} ج.س\n` +
+          `🔖 العربون المدفوع: 5,000 ج.س\n\n` +
+          `*بيانات الدفع:*\n` +
+          `🏦 بنكك: 2480512\n` +
+          `📱 فوري: 51690879\n` +
+          `💰 أوكاش: 1331525\n` +
+          `🏦 المشرق: 64498707\n` +
+          `👤 الاسم: انس أمين\n\n` +
+          `تم الدفع وإرفاق صورة الإيصال.\n` +
+          `رقم الحجز: ${docRef.id.slice(0,6)}`;
         
         const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+        
+        // إغلاق النافذة ثم التوجيه للواتساب
+        closePaymentModal();
         window.location.href = whatsappUrl;
         
+        // إضافة الحجز للقائمة المحلية
+        bookings.push({ id: docRef.id, ...bookingData, total: totalPrice });
+        updateBookingsUI();
+        
+        // الانتقال إلى قسم "تذاكري"
         switchTab('bookings');
         
       } catch (error) {
-        console.error("خطأ في الحجز:", error);
-        alert("حدث خطأ أثناء عملية الحجز. الرجاء المحاولة مرة أخرى.");
+        console.error("خطأ في حفظ الحجز:", error);
+        alert("حدث خطأ أثناء حفظ الحجز. الرجاء المحاولة مرة أخرى.");
       }
     }
 
@@ -856,6 +1140,9 @@
     window.prevStep = prevStep;
     window.skipOnboarding = skipOnboarding;
     window.scrollFilters = scrollFilters;
+    window.closePaymentModal = closePaymentModal;
+    window.copyToClipboard = copyToClipboard;
+    window.proceedToUploadReceipt = proceedToUploadReceipt;
   </script>
 </body>
 </html>
