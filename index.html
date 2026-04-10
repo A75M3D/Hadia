@@ -222,7 +222,6 @@
 
   <!-- Onboarding Modal -->
   <div id="onboardingModal" class="onboarding-overlay" style="display: none;">
-    <!-- نفس محتوى الـ onboarding السابق دون تغيير -->
     <div class="onboarding-card">
       <button onclick="skipOnboarding()" class="absolute top-4 left-4 text-gray-400 hover:text-gray-600 text-sm font-bold dark:text-gray-500 dark:hover:text-gray-300">تخطي</button>
       <div id="onboardingContent"></div>
@@ -321,7 +320,6 @@
 
   <!-- الخدمات -->
   <main id="view-services" class="view-section px-4 pt-6">
-    <!-- نفس المحتوى السابق -->
     <h2 class="text-2xl font-black mb-6 text-royalDark dark:text-white">خدمات تزكرتي المميزة</h2>
     <div class="grid grid-cols-1 gap-4">
       <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex gap-4 items-center">
@@ -404,14 +402,43 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ==================== 🟢ثوابت التطبيق 🟢====================
+    // ==================== ثوابت التطبيق ====================
     const WHATSAPP_NUMBER = '249924299798'; // رقم الواتساب الثابت
+    const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 ساعات بالميلي ثانية
 
     let bookings = [];
     let stateList = [];
     let currentFilter = 'all';
     let busNamesList = [];
     
+    // ==================== دوال الكاش ====================
+    function getCachedData(key) {
+      try {
+        const cached = localStorage.getItem(key);
+        if (!cached) return null;
+        const data = JSON.parse(cached);
+        if (data.expiry && Date.now() > data.expiry) {
+          localStorage.removeItem(key);
+          return null;
+        }
+        return data.value;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setCachedData(key, value) {
+      try {
+        const data = {
+          value: value,
+          expiry: Date.now() + CACHE_TTL
+        };
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch (e) {
+        console.warn("فشل تخزين البيانات مؤقتاً:", e);
+      }
+    }
+
     // ==================== الوضع الداكن/الفاتح ====================
     function initTheme() {
       const html = document.documentElement;
@@ -490,26 +517,62 @@
 
     function extractCity(fullName) { if (!fullName) return ''; const match = fullName.match(/\(([^)]+)\)/); return match ? match[1] : fullName; }
 
-    // ==================== تحميل الولايات ====================
+    // ==================== تحميل الولايات (مع كاش) ====================
     async function loadStates() {
       const fromSelect = document.getElementById('search-from');
       const toSelect = document.getElementById('search-to');
+      
+      // محاولة جلب البيانات من الكاش
+      const cachedStates = getCachedData('tazkarti_states');
+      if (cachedStates && Array.isArray(cachedStates) && cachedStates.length > 0) {
+        stateList = cachedStates;
+        populateStateSelects(stateList);
+        return;
+      }
+      
       try {
         const snapshot = await db.collection("buses").get();
         const fromStates = new Set(); const toStates = new Set();
         snapshot.forEach(doc => { const data = doc.data(); if (data.from) fromStates.add(data.from); if (data.to) toStates.add(data.to); });
         const allStates = [...new Set([...fromStates, ...toStates])].sort();
-        if (allStates.length === 0) { fromSelect.innerHTML = '<option value="">لا توجد مناطق مضافة</option>'; toSelect.innerHTML = '<option value="">لا توجد مناطق مضافة</option>'; return; }
+        if (allStates.length === 0) {
+          fromSelect.innerHTML = '<option value="">لا توجد مناطق مضافة</option>';
+          toSelect.innerHTML = '<option value="">لا توجد مناطق مضافة</option>';
+          return;
+        }
         stateList = allStates;
-        const renderOptions = (selectedValue = null) => stateList.map(state => { const cityName = extractCity(state); const selected = (selectedValue === state) ? 'selected' : ''; return `<option value="${state}" ${selected}>${cityName}</option>`; }).join('');
-        fromSelect.innerHTML = renderOptions(stateList[0]);
-        toSelect.innerHTML = renderOptions(stateList[0] === stateList[stateList.length-1] ? stateList[0] : stateList[1] || stateList[0]);
-        if (stateList.length > 1) toSelect.value = stateList[1];
-      } catch (error) { console.error("خطأ في تحميل المناطق:", error); fromSelect.innerHTML = '<option value="">خطأ في التحميل</option>'; toSelect.innerHTML = '<option value="">خطأ في التحميل</option>'; }
+        setCachedData('tazkarti_states', stateList);
+        populateStateSelects(stateList);
+      } catch (error) {
+        console.error("خطأ في تحميل المناطق:", error);
+        fromSelect.innerHTML = '<option value="">خطأ في التحميل</option>';
+        toSelect.innerHTML = '<option value="">خطأ في التحميل</option>';
+      }
+    }
+    
+    function populateStateSelects(states) {
+      const fromSelect = document.getElementById('search-from');
+      const toSelect = document.getElementById('search-to');
+      const renderOptions = (selectedValue = null) => states.map(state => {
+        const cityName = extractCity(state);
+        const selected = (selectedValue === state) ? 'selected' : '';
+        return `<option value="${state}" ${selected}>${cityName}</option>`;
+      }).join('');
+      fromSelect.innerHTML = renderOptions(states[0]);
+      toSelect.innerHTML = renderOptions(states[0] === states[states.length-1] ? states[0] : states[1] || states[0]);
+      if (states.length > 1) toSelect.value = states[1];
     }
 
-    // ==================== تحميل أسماء الباصات للفلترة ====================
+    // ==================== تحميل أسماء الباصات للفلترة (مع كاش) ====================
     async function loadBusFilters() {
+      // محاولة جلب البيانات من الكاش
+      const cachedFilters = getCachedData('tazkarti_bus_filters');
+      if (cachedFilters && Array.isArray(cachedFilters)) {
+        busNamesList = cachedFilters;
+        renderFilterChips(busNamesList);
+        return;
+      }
+      
       try {
         const snapshot = await db.collection("buses").get();
         const busNames = new Set();
@@ -519,28 +582,25 @@
         });
         
         busNamesList = Array.from(busNames).sort();
-        
-        const filterChipsContainer = document.getElementById('filterChips');
-        let chipsHtml = `<button data-filter="all" class="filter-chip active">الكل</button>`;
-        busNamesList.forEach(name => {
-          chipsHtml += `<button data-filter="${name}" class="filter-chip">${name}</button>`;
-        });
-        filterChipsContainer.innerHTML = chipsHtml;
-        
-        attachFilterEvents();
-        setTimeout(updateArrowsVisibility, 100);
+        setCachedData('tazkarti_bus_filters', busNamesList);
+        renderFilterChips(busNamesList);
       } catch (error) {
         console.error("خطأ في تحميل أسماء الباصات:", error);
-        const filterChipsContainer = document.getElementById('filterChips');
-        filterChipsContainer.innerHTML = `
-          <button data-filter="all" class="filter-chip active">الكل</button>
-          <button data-filter="أبو عامر" class="filter-chip">أبو عامر</button>
-          <button data-filter="العزيزية" class="filter-chip">العزيزية</button>
-          <button data-filter="شريان الشمال" class="filter-chip">شريان الشمال</button>
-          <button data-filter="أبو هشام" class="filter-chip">أبو هشام</button>
-        `;
-        attachFilterEvents();
+        // أسماء افتراضية
+        busNamesList = ["أبو عامر", "العزيزية", "شريان الشمال", "أبو هشام"];
+        renderFilterChips(busNamesList);
       }
+    }
+    
+    function renderFilterChips(names) {
+      const filterChipsContainer = document.getElementById('filterChips');
+      let chipsHtml = `<button data-filter="all" class="filter-chip active">الكل</button>`;
+      names.forEach(name => {
+        chipsHtml += `<button data-filter="${name}" class="filter-chip">${name}</button>`;
+      });
+      filterChipsContainer.innerHTML = chipsHtml;
+      attachFilterEvents();
+      setTimeout(updateArrowsVisibility, 100);
     }
     
     function attachFilterEvents() {
@@ -606,46 +666,78 @@
       }
     }
 
-    // ==================== جلب الرحلات ====================
+    // ==================== جلب الرحلات (مع كاش) ====================
     async function renderBuses() {
       const container = document.getElementById('buses-container');
       const from = document.getElementById('search-from').value;
       const to = document.getElementById('search-to').value;
-      if (!from || !to) { container.innerHTML = '<div class="text-center py-10 text-gray-400">الرجاء اختيار محطتي المغادرة والوصول</div>'; return; }
+      if (!from || !to) { 
+        container.innerHTML = '<div class="text-center py-10 text-gray-400">الرجاء اختيار محطتي المغادرة والوصول</div>'; 
+        return; 
+      }
+      
+      const cacheKey = `tazkarti_buses_${from}_${to}`;
+      
+      // محاولة جلب من الكاش أولاً
+      const cachedBuses = getCachedData(cacheKey);
+      if (cachedBuses && Array.isArray(cachedBuses)) {
+        displayBuses(cachedBuses, from, to);
+        return;
+      }
+      
       container.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-pulse text-2xl text-gold"></i><p class="mt-2">جاري تحميل الرحلات...</p></div>';
+      
       try {
         const snapshot = await db.collection("buses").where("from", "==", from).where("to", "==", to).get();
-        let buses = []; snapshot.forEach(doc => buses.push({ id: doc.id, ...doc.data() }));
-        if (currentFilter !== 'all') buses = buses.filter(bus => bus.name && bus.name === currentFilter);
-        if (buses.length === 0) {
-          const filterText = currentFilter === 'all' ? '' : ` (${currentFilter})`;
-          container.innerHTML = `<div class="text-center py-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700"><i class="fas fa-route text-5xl text-gray-300 dark:text-gray-600 mb-4"></i><p class="font-bold text-gray-500 dark:text-gray-400">لا توجد رحلات متاحة من ${extractCity(from)} إلى ${extractCity(to)}${filterText}</p><p class="text-sm text-gray-400 mt-2">جرب البحث عن مسار آخر أو غير الفلتر</p></div>`;
-          return;
-        }
-        container.innerHTML = buses.map(bus => `
-          <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div class="relative h-48">
-              <img src="${bus.img || 'https://images.pexels.com/photos/2790386/pexels-photo-2790386.jpeg?auto=compress&cs=tinysrgb&w=600'}" class="h-full w-full object-cover" alt="${bus.name}">
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-              <div class="absolute bottom-4 right-4 text-white"><h4 class="text-2xl font-black">${bus.name}</h4><p class="text-xs text-gold font-bold uppercase">${bus.type}</p></div>
+        let buses = []; 
+        snapshot.forEach(doc => buses.push({ id: doc.id, ...doc.data() }));
+        
+        // تخزين في الكاش
+        setCachedData(cacheKey, buses);
+        
+        displayBuses(buses, from, to);
+      } catch (error) { 
+        console.error("خطأ في جلب الرحلات:", error); 
+        container.innerHTML = '<div class="text-center py-10 text-red-500">حدث خطأ أثناء تحميل الرحلات. تأكد من اتصالك بالإنترنت.</div>'; 
+      }
+    }
+    
+    function displayBuses(buses, from, to) {
+      const container = document.getElementById('buses-container');
+      let filteredBuses = buses;
+      if (currentFilter !== 'all') {
+        filteredBuses = buses.filter(bus => bus.name && bus.name === currentFilter);
+      }
+      
+      if (filteredBuses.length === 0) {
+        const filterText = currentFilter === 'all' ? '' : ` (${currentFilter})`;
+        container.innerHTML = `<div class="text-center py-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700"><i class="fas fa-route text-5xl text-gray-300 dark:text-gray-600 mb-4"></i><p class="font-bold text-gray-500 dark:text-gray-400">لا توجد رحلات متاحة من ${extractCity(from)} إلى ${extractCity(to)}${filterText}</p><p class="text-sm text-gray-400 mt-2">جرب البحث عن مسار آخر أو غير الفلتر</p></div>`;
+        return;
+      }
+      
+      container.innerHTML = filteredBuses.map(bus => `
+        <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div class="relative h-48">
+            <img src="${bus.img || 'https://images.pexels.com/photos/2790386/pexels-photo-2790386.jpeg?auto=compress&cs=tinysrgb&w=600'}" class="h-full w-full object-cover" alt="${bus.name}">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+            <div class="absolute bottom-4 right-4 text-white"><h4 class="text-2xl font-black">${bus.name}</h4><p class="text-xs text-gold font-bold uppercase">${bus.type}</p></div>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-center mb-6 bg-blue-50/50 dark:bg-blue-900/20 p-4 rounded-3xl border border-blue-100 dark:border-blue-800">
+              <div class="text-right"><p class="text-[10px] text-gray-400 font-bold mb-1">جهة التحرك: ${extractCity(bus.from)}</p><p class="font-black text-xl text-royalDark dark:text-white">${bus.depTime}</p></div>
+              <div class="flex-1 flex flex-col items-center px-4"><i class="fas fa-bus text-gold mb-1"></i><div class="w-full border-t border-dashed border-gray-300 dark:border-gray-600"></div></div>
+              <div class="text-left"><p class="text-[10px] text-gray-400 font-bold mb-1">جهة الوصول: ${extractCity(bus.to)}</p><p class="font-black text-xl text-emerald">${bus.arrTime}</p></div>
             </div>
-            <div class="p-6">
-              <div class="flex justify-between items-center mb-6 bg-blue-50/50 dark:bg-blue-900/20 p-4 rounded-3xl border border-blue-100 dark:border-blue-800">
-                <div class="text-right"><p class="text-[10px] text-gray-400 font-bold mb-1">جهة التحرك: ${extractCity(bus.from)}</p><p class="font-black text-xl text-royalDark dark:text-white">${bus.depTime}</p></div>
-                <div class="flex-1 flex flex-col items-center px-4"><i class="fas fa-bus text-gold mb-1"></i><div class="w-full border-t border-dashed border-gray-300 dark:border-gray-600"></div></div>
-                <div class="text-left"><p class="text-[10px] text-gray-400 font-bold mb-1">جهة الوصول: ${extractCity(bus.to)}</p><p class="font-black text-xl text-emerald">${bus.arrTime}</p></div>
-              </div>
-              <div class="flex justify-between items-center">
-                <div><p class="text-[10px] text-gray-400 font-bold">سعر التذكرة</p><p class="font-black text-2xl text-royalDark dark:text-white">${bus.price.toLocaleString()}<span class="text-xs mr-1 font-normal">ج.س</span></p></div>
-                <button onclick="bookTrip('${bus.id}')" class="bg-gold text-royalDark px-8 py-4 rounded-2xl font-black text-sm shadow-lg shadow-gold/20 active:scale-95 transition-all">إحجز مقعدك</button>
-              </div>
+            <div class="flex justify-between items-center">
+              <div><p class="text-[10px] text-gray-400 font-bold">سعر التذكرة</p><p class="font-black text-2xl text-royalDark dark:text-white">${bus.price.toLocaleString()}<span class="text-xs mr-1 font-normal">ج.س</span></p></div>
+              <button onclick="bookTrip('${bus.id}')" class="bg-gold text-royalDark px-8 py-4 rounded-2xl font-black text-sm shadow-lg shadow-gold/20 active:scale-95 transition-all">إحجز مقعدك</button>
             </div>
           </div>
-        `).join('');
-      } catch (error) { console.error("خطأ في جلب الرحلات:", error); container.innerHTML = '<div class="text-center py-10 text-red-500">حدث خطأ أثناء تحميل الرحلات. تأكد من اتصالك بالإنترنت.</div>'; }
+        </div>
+      `).join('');
     }
 
-    // ==================== حجز رحلة (معدّل للتوجيه المباشر لواتساب) ====================
+    // ==================== حجز رحلة ====================
     async function bookTrip(busId) {
       try {
         const busDoc = await db.collection("buses").doc(busId).get();
@@ -668,28 +760,25 @@
           contactWhatsApp: WHATSAPP_NUMBER
         };
         
-        // حفظ الحجز في Firestore (لا ننتظر حتى لا نؤخر التوجيه)
+        // حفظ الحجز في Firestore
         db.collection("bookings").add(bookingData).then(docRef => {
-          // تحديث واجهة الحجوزات محلياً
           bookings.push({ id: docRef.id, ...bookingData, total: totalPrice });
           updateBookingsUI();
         }).catch(err => console.error("خطأ في حفظ الحجز:", err));
         
         // تجهيز رسالة واتساب والتوجيه فوراً
         const message = `*تأكيد حجز رحلة تزكرتي*\n\n` +
+          `مرحبا اريد حجز تزكرة:\n` +
           `🚌 ${bus.name} (${bus.type})\n` +
           `📍 من: ${extractCity(bus.from)} → إلى: ${extractCity(bus.to)}\n` +
           `📅 ${date} | ⏰ الإقلاع: ${bus.depTime}\n` +
           `👥 الركاب: ${passengers}\n` +
           `💵 الإجمالي: ${totalPrice.toLocaleString()} ج.س\n\n` +
-          `شكراً لثقتكم بنا. نتمنى لكم رحلة سعيدة.`;
+          `عايز تفاصيل حجز التزكرة وشكرا`;
         
         const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-        
-        // توجيه مباشر بدون فتح نافذة جديدة أو روابط خارجية مربكة
         window.location.href = whatsappUrl;
         
-        // تبديل التبويب إلى "تذاكري" في الخلفية (سيحدث بعد التوجيه إذا عاد المستخدم)
         switchTab('bookings');
         
       } catch (error) {
@@ -698,13 +787,36 @@
       }
     }
 
+    // ==================== حذف حجز ====================
+    async function deleteBooking(bookingId) {
+      if (!confirm('هل أنت متأكد من حذف هذا الحجز؟')) return;
+      
+      try {
+        await db.collection("bookings").doc(bookingId).delete();
+        // حذف من المصفوفة المحلية
+        bookings = bookings.filter(b => b.id !== bookingId);
+        updateBookingsUI();
+      } catch (error) {
+        console.error("خطأ في حذف الحجز:", error);
+        alert("حدث خطأ أثناء حذف الحجز. الرجاء المحاولة مرة أخرى.");
+      }
+    }
+
     function updateBookingsUI() {
       const list = document.getElementById('bookings-list');
       if(bookings.length > 0) {
         list.innerHTML = bookings.map(b => `
-          <div class="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border-r-8 border-gold shadow-sm">
-            <div class="flex justify-between items-start mb-4"><div><h4 class="font-black text-lg">${b.busName}</h4><p class="text-xs text-gray-500 dark:text-gray-400">${b.date} - ${b.depTime}</p></div><span class="bg-emerald/10 text-emerald text-[10px] font-bold px-3 py-1 rounded-full uppercase">${b.status || 'مؤكد'}</span></div>
-            <div class="flex items-center gap-3 mb-5 text-sm font-bold"><span>${extractCity(b.from)}</span><i class="fas fa-arrow-left text-gold"></i><span>${extractCity(b.to)}</span></div>
+          <div class="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border-r-8 border-gold shadow-sm relative">
+            <button onclick="deleteBooking('${b.id}')" class="absolute top-4 left-4 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors p-2">
+              <i class="fas fa-trash-alt text-xl"></i>
+            </button>
+            <div class="flex justify-between items-start mb-4">
+              <div><h4 class="font-black text-lg">${b.busName}</h4><p class="text-xs text-gray-500 dark:text-gray-400">${b.date} - ${b.depTime}</p></div>
+              <span class="bg-emerald/10 text-emerald text-[10px] font-bold px-3 py-1 rounded-full uppercase ml-10">${b.status || 'مؤكد'}</span>
+            </div>
+            <div class="flex items-center gap-3 mb-5 text-sm font-bold">
+              <span>${extractCity(b.from)}</span><i class="fas fa-arrow-left text-gold"></i><span>${extractCity(b.to)}</span>
+            </div>
             <div class="flex justify-between items-center border-t border-gray-50 dark:border-gray-700 pt-4">
               <div><p class="text-[10px] text-gray-400 font-bold">الركاب: ${b.passengers}</p><p class="font-black text-royalDark dark:text-white">${b.totalPrice.toLocaleString()} ج.س</p></div>
               <a href="https://wa.me/${b.contactWhatsApp || WHATSAPP_NUMBER}?text=${encodeURIComponent('تفاصيل الحجز: ' + b.busName + ' من ' + extractCity(b.from) + ' إلى ' + extractCity(b.to) + ' بتاريخ ' + b.date)}" class="bg-[#25D366] text-white px-5 py-3 rounded-xl text-xs font-bold flex items-center gap-2"><i class="fab fa-whatsapp text-lg"></i> تأكيد الطلب</a>
@@ -738,6 +850,7 @@
     window.switchTab = switchTab;
     window.renderBuses = renderBuses;
     window.bookTrip = bookTrip;
+    window.deleteBooking = deleteBooking;
     window.nextStep = nextStep;
     window.prevStep = prevStep;
     window.skipOnboarding = skipOnboarding;
