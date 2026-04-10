@@ -328,8 +328,9 @@
           <i class="fas fa-coins"></i>
         </div>
         <div>
-          <p class="font-bold text-royalDark dark:text-white">ادفع 5,000 جنيه فقط لتأمين مقعدك</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">المبلغ المتبقي يُدفع قبل الرحلة</p>
+          <p class="font-bold text-royalDark dark:text-white">
+              ادفع 10,000 جنيه فقط لتأمين مقعدك</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">المبلغ المتبقي يُدفع قبل  الرحلة لأستلام التزكرة فورا عبر واتساب</p>
         </div>
       </div>
       
@@ -347,8 +348,8 @@
           </div>
           <div class="space-y-2 text-sm">
             <div class="flex justify-between items-center">
-              <span class="text-gray-500 dark:text-gray-400">اسم المستفيد:</span>
-              <span class="font-bold dark:text-white">انس أمين</span>
+              <span class="text-gray-500 dark:text-gray-400"> اسم المستفيد:</span>
+              <span class="font-bold dark:text-white">أنس أمين خليل أمين</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-gray-500 dark:text-gray-400">رقم الحساب:</span>
@@ -994,8 +995,9 @@
           <span>الإجمالي: ${totalPrice.toLocaleString()} ج.س</span>
         </div>
         <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 flex justify-between items-center">
-          <span class="font-bold">المطلوب كعربون:</span>
-          <span class="font-black text-gold text-xl">5,000 ج.س</span>
+          <span class="font-bold">
+             الحجز المبدئي:</span>
+          <span class="font-black text-gold text-xl">10,000 ج.س</span>
         </div>
       `;
       
@@ -1056,37 +1058,37 @@
         customerName: fullName,
         customerPhone: phone,
         paymentAccounts: {
-          bankak: '2480512',
+          bankak: '2480511',
           fawry: '51690879',
           okash: '1331525',
           mashreq: '64498707',
-          name: 'انس أمين'
+          name:'أنس أمين خليل أمين'
         }
       };
       
       try {
         const docRef = await db.collection("bookings").add(bookingData);
         
-        // تجهيز رسالة واتساب مع تفاصيل الحجز وبيانات العميل والدفع
-        const message = `*تأكيد حجز رحلة تزكرتي*\n\n` +
-          `*بيانات العميل:*\n` +
-          `👤 الاسم: ${fullName}\n` +
-          `📞 الهاتف: ${phone}\n\n` +
-          `*تفاصيل الرحلة:*\n` +
-          `🚌 *${bus.name}* (${bus.type})\n` +
-          `📍 من: ${extractCity(bus.from)} → إلى: ${extractCity(bus.to)}\n` +
-          `📅 ${date} | ⏰ الإقلاع: ${bus.depTime}\n` +
-          `👥 الركاب: ${passengers}\n` +
-          `💵 الإجمالي: ${totalPrice.toLocaleString()} ج.س\n` +
-          `🔖 العربون المدفوع: 5,000 ج.س\n\n` +
-          `*بيانات الدفع:*\n` +
-          `🏦 بنكك: 2480512\n` +
-          `📱 فوري: 51690879\n` +
-          `💰 أوكاش: 1331525\n` +
-          `🏦 المشرق: 64498707\n` +
-          `👤 الاسم: انس أمين\n\n` +
-          `تم الدفع وإرفاق صورة الإيصال.\n` +
-          `رقم الحجز: ${docRef.id.slice(0,6)}`;
+       // تجهيز رسالة واتساب مع تفاصيل الحجز وبيانات العميل والدفع
+const message = `✅ *تأكيد حجز رحلة تزكرتي* ✅\n\n` +
+  `*📋 بيانات العميل:*\n` +
+  `👤 الاسم: ${fullName}\n` +
+  `📞 الهاتف: ${phone}\n\n` +
+  `*🚍 تفاصيل الرحلة:*\n` +
+  `🚌 *${bus.name}* (${bus.type})\n` +
+  `📍 من: ${extractCity(bus.from)} → إلى: ${extractCity(bus.to)}\n` +
+  `📅 التاريخ: ${date} | ⏰ الإقلاع: ${bus.depTime}\n` +
+  `👥 عدد الركاب: ${passengers}\n` +
+  `💵 الإجمالي: ${totalPrice.toLocaleString()} ج.س\n` +
+  `🔖 الحجز المبدئي: 10,000 ج.س\n\n` +
+  `*💳 بيانات الدفع:*\n` +
+  `🏦 بنكك: 2480511\n` +
+  `📱 فوري: 51690879\n` +
+  `💰 أوكاش: 1331525\n` +
+  `🏦 المشرق: 64498707\n` +
+  `👤 اسم الحساب: أنس أمين خليل أمين\n\n` +
+  `✅ تم الدفع وسأرفق لك صورة إيصال الدفع.\n` +
+  `🆔 رقم الحجز: ${docRef.id.slice(0,6)}`;
         
         const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
         
