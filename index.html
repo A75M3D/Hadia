@@ -30,6 +30,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   
   <style>
+    /* جميع الأنماط السابقة دون تغيير */
     body { 
       font-family: 'Cairo', sans-serif; 
       background-color: #f8fafc; 
@@ -221,6 +222,7 @@
 
   <!-- Onboarding Modal -->
   <div id="onboardingModal" class="onboarding-overlay" style="display: none;">
+    <!-- نفس محتوى الـ onboarding السابق دون تغيير -->
     <div class="onboarding-card">
       <button onclick="skipOnboarding()" class="absolute top-4 left-4 text-gray-400 hover:text-gray-600 text-sm font-bold dark:text-gray-500 dark:hover:text-gray-300">تخطي</button>
       <div id="onboardingContent"></div>
@@ -243,7 +245,6 @@
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <!-- زر الوضع الداكن/الفاتح -->
       <button id="themeToggle" class="bg-gold/20 p-2 rounded-full border border-gold/30 text-white hover:bg-gold/30 transition-colors">
         <i id="themeIcon" class="fas fa-moon"></i>
       </button>
@@ -288,7 +289,7 @@
       </div>
     </div>
 
-    <!-- شريط فلترة الباصات مع أسهم -->
+    <!-- شريط فلترة الباصات (يُملأ ديناميكياً) -->
     <div class="mb-4">
       <div class="flex items-center justify-between mb-2 px-2">
         <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400">فلترة حسب الباص</h3>
@@ -296,23 +297,16 @@
       </div>
       
       <div class="filter-wrapper">
-        <!-- سهم اليمين (للتمرير نحو بداية RTL = يسار الشاشة) -->
         <div id="scrollRightArrow" class="scroll-arrow arrow-right" onclick="scrollFilters('right')">
           <i class="fas fa-chevron-right"></i>
         </div>
         
-        <!-- حاوية التمرير -->
         <div id="filterScrollContainer" class="filter-scroll-container">
           <div class="filter-chips" id="filterChips">
             <button data-filter="all" class="filter-chip active">الكل</button>
-            <button data-filter="أبو عامر" class="filter-chip">أبو عامر</button>
-            <button data-filter="العزيزية" class="filter-chip">العزيزية</button>
-            <button data-filter="شريان الشمال" class="filter-chip">شريان الشمال</button>
-            <button data-filter="أبو هشام" class="filter-chip">أبو هشام</button>
           </div>
         </div>
         
-        <!-- سهم اليسار (للتمرير نحو نهاية RTL = يمين الشاشة) -->
         <div id="scrollLeftArrow" class="scroll-arrow arrow-left" onclick="scrollFilters('left')">
           <i class="fas fa-chevron-left"></i>
         </div>
@@ -327,6 +321,7 @@
 
   <!-- الخدمات -->
   <main id="view-services" class="view-section px-4 pt-6">
+    <!-- نفس المحتوى السابق -->
     <h2 class="text-2xl font-black mb-6 text-royalDark dark:text-white">خدمات تزكرتي المميزة</h2>
     <div class="grid grid-cols-1 gap-4">
       <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex gap-4 items-center">
@@ -343,8 +338,7 @@
       </div>
       <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex gap-4 items-center">
         <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl shrink-0"><i class="fas fa-shield-alt"></i></div>
-        <div><h4 class="font-bold text-lg">أمان ومراقبة</h4><p class="text-sm text-gray-500 dark:text-gray-400">
-           أعلى مستوى أمان و سائقين ذوي خبرة وكفاءة عالية.</p></div>
+        <div><h4 class="font-bold text-lg">أمان ومراقبة</h4><p class="text-sm text-gray-500 dark:text-gray-400">نظام تتبع GPS لجميع الباصات مع سائقين ذوي خبرة وكفاءة عالية.</p></div>
       </div>
     </div>
   </main>
@@ -380,7 +374,7 @@
         <i class="fas fa-map-marker-alt text-red-500 text-xl"></i>
         <div><p class="text-[10px] text-gray-400 font-bold">المكتب الرئيسي</p><p class="font-bold dark:text-white">الخرطوم - الميناء البري</p></div>
       </a>
-      <a href="https://wa.me/249908280115" class="bg-white dark:bg-gray-800 p-5 rounded-2xl flex items-center gap-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+      <a href="https://wa.me/249123456789" class="bg-white dark:bg-gray-800 p-5 rounded-2xl flex items-center gap-4 border border-gray-100 dark:border-gray-700 shadow-sm">
         <i class="fab fa-whatsapp text-emerald text-xl"></i>
         <div><p class="text-[10px] text-gray-400 font-bold">واتساب الأعمال</p><p class="font-bold dark:text-white">راسلنا الآن</p></div>
       </a>
@@ -410,9 +404,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // ==================== ثوابت التطبيق ====================
+    const WHATSAPP_NUMBER = '249123456789'; // رقم الواتساب الثابت
+
     let bookings = [];
     let stateList = [];
     let currentFilter = 'all';
+    let busNamesList = [];
     
     // ==================== الوضع الداكن/الفاتح ====================
     function initTheme() {
@@ -510,39 +508,78 @@
       } catch (error) { console.error("خطأ في تحميل المناطق:", error); fromSelect.innerHTML = '<option value="">خطأ في التحميل</option>'; toSelect.innerHTML = '<option value="">خطأ في التحميل</option>'; }
     }
 
-    // ==================== فلترة الباصات مع الأسهم ====================
-    function initFilterChips() {
+    // ==================== تحميل أسماء الباصات للفلترة ====================
+    async function loadBusFilters() {
+      try {
+        const snapshot = await db.collection("buses").get();
+        const busNames = new Set();
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.name) busNames.add(data.name);
+        });
+        
+        busNamesList = Array.from(busNames).sort();
+        
+        const filterChipsContainer = document.getElementById('filterChips');
+        let chipsHtml = `<button data-filter="all" class="filter-chip active">الكل</button>`;
+        busNamesList.forEach(name => {
+          chipsHtml += `<button data-filter="${name}" class="filter-chip">${name}</button>`;
+        });
+        filterChipsContainer.innerHTML = chipsHtml;
+        
+        attachFilterEvents();
+        setTimeout(updateArrowsVisibility, 100);
+      } catch (error) {
+        console.error("خطأ في تحميل أسماء الباصات:", error);
+        const filterChipsContainer = document.getElementById('filterChips');
+        filterChipsContainer.innerHTML = `
+          <button data-filter="all" class="filter-chip active">الكل</button>
+          <button data-filter="أبو عامر" class="filter-chip">أبو عامر</button>
+          <button data-filter="العزيزية" class="filter-chip">العزيزية</button>
+          <button data-filter="شريان الشمال" class="filter-chip">شريان الشمال</button>
+          <button data-filter="أبو هشام" class="filter-chip">أبو هشام</button>
+        `;
+        attachFilterEvents();
+      }
+    }
+    
+    function attachFilterEvents() {
       const chips = document.querySelectorAll('.filter-chip');
       const container = document.getElementById('filterScrollContainer');
       
-      chips.forEach(chip => chip.addEventListener('click', function() {
-        const filterValue = this.getAttribute('data-filter');
-        setActiveFilter(filterValue);
-        const from = document.getElementById('search-from').value;
-        const to = document.getElementById('search-to').value;
-        if (from && to) renderBuses();
-      }));
+      chips.forEach(chip => {
+        chip.removeEventListener('click', handleFilterClick);
+        chip.addEventListener('click', handleFilterClick);
+      });
       
-      // تحديث حالة الأسهم عند التمرير أو تغيير الحجم
-      container.addEventListener('scroll', updateArrowsVisibility);
-      window.addEventListener('resize', updateArrowsVisibility);
-      // استدعاء أولي
-      setTimeout(updateArrowsVisibility, 100);
+      if (container) {
+        container.removeEventListener('scroll', updateArrowsVisibility);
+        container.addEventListener('scroll', updateArrowsVisibility);
+      }
+    }
+    
+    function handleFilterClick(e) {
+      const filterValue = e.currentTarget.getAttribute('data-filter');
+      setActiveFilter(filterValue);
+      const from = document.getElementById('search-from').value;
+      const to = document.getElementById('search-to').value;
+      if (from && to) renderBuses();
     }
     
     function setActiveFilter(filter) {
       currentFilter = filter;
-      document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.toggle('active', chip.getAttribute('data-filter') === filter));
+      document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.getAttribute('data-filter') === filter);
+      });
     }
     
-    // التمرير باستخدام الأسهم
     function scrollFilters(direction) {
       const container = document.getElementById('filterScrollContainer');
-      const scrollAmount = 250; // بكسل
+      const scrollAmount = 250;
       if (direction === 'left') {
-        container.scrollLeft += scrollAmount; // في RTL, left يعني التحرك نحو نهاية المحتوى
+        container.scrollLeft += scrollAmount;
       } else {
-        container.scrollLeft -= scrollAmount; // right يعني التحرك نحو البداية
+        container.scrollLeft -= scrollAmount;
       }
     }
     
@@ -556,8 +593,6 @@
       const maxScroll = container.scrollWidth - container.clientWidth;
       const scrollLeft = container.scrollLeft;
       
-      // في RTL، scrollLeft = 0 يعني في أقصى اليمين (بداية المحتوى)
-      // scrollLeft = maxScroll يعني في أقصى اليسار (نهاية المحتوى)
       if (scrollLeft <= 5) {
         rightArrow.classList.add('disabled');
       } else {
@@ -581,7 +616,7 @@
       try {
         const snapshot = await db.collection("buses").where("from", "==", from).where("to", "==", to).get();
         let buses = []; snapshot.forEach(doc => buses.push({ id: doc.id, ...doc.data() }));
-        if (currentFilter !== 'all') buses = buses.filter(bus => bus.name && bus.name.includes(currentFilter));
+        if (currentFilter !== 'all') buses = buses.filter(bus => bus.name && bus.name === currentFilter);
         if (buses.length === 0) {
           const filterText = currentFilter === 'all' ? '' : ` (${currentFilter})`;
           container.innerHTML = `<div class="text-center py-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700"><i class="fas fa-route text-5xl text-gray-300 dark:text-gray-600 mb-4"></i><p class="font-bold text-gray-500 dark:text-gray-400">لا توجد رحلات متاحة من ${extractCity(from)} إلى ${extractCity(to)}${filterText}</p><p class="text-sm text-gray-400 mt-2">جرب البحث عن مسار آخر أو غير الفلتر</p></div>`;
@@ -610,25 +645,57 @@
       } catch (error) { console.error("خطأ في جلب الرحلات:", error); container.innerHTML = '<div class="text-center py-10 text-red-500">حدث خطأ أثناء تحميل الرحلات. تأكد من اتصالك بالإنترنت.</div>'; }
     }
 
-    // ==================== حجز رحلة ====================
+    // ==================== حجز رحلة (معدّل للتوجيه المباشر لواتساب) ====================
     async function bookTrip(busId) {
       try {
         const busDoc = await db.collection("buses").doc(busId).get();
-        if (!busDoc.exists) { alert("الرحلة غير موجودة"); return; }
+        if (!busDoc.exists) {
+          alert("الرحلة غير موجودة");
+          return;
+        }
         const bus = busDoc.data();
         const passengers = parseInt(document.getElementById('search-passengers').value);
         const date = document.getElementById('search-date').value;
-        const bookingData = { busId, busName: bus.name, busType: bus.type, from: bus.from, to: bus.to, date, depTime: bus.depTime, arrTime: bus.arrTime, passengers, pricePerSeat: bus.price, totalPrice: bus.price * passengers, status: "مؤكد", createdAt: firebase.firestore.FieldValue.serverTimestamp(), contactWhatsApp: "249123456789" };
-        if (confirm(`تأكيد حجز ${passengers} مقعد في رحلة ${bus.name}\nالإجمالي: ${bookingData.totalPrice.toLocaleString()} ج.س\nاضغط موافق لمتابعة الدفع (محاكاة)`)) {
-          const docRef = await db.collection("bookings").add(bookingData);
-          bookings.push({ id: docRef.id, ...bookingData, total: bookingData.totalPrice });
+        const totalPrice = bus.price * passengers;
+        
+        const bookingData = {
+          busId, busName: bus.name, busType: bus.type,
+          from: bus.from, to: bus.to, date,
+          depTime: bus.depTime, arrTime: bus.arrTime,
+          passengers, pricePerSeat: bus.price, totalPrice,
+          status: "مؤكد",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          contactWhatsApp: WHATSAPP_NUMBER
+        };
+        
+        // حفظ الحجز في Firestore (لا ننتظر حتى لا نؤخر التوجيه)
+        db.collection("bookings").add(bookingData).then(docRef => {
+          // تحديث واجهة الحجوزات محلياً
+          bookings.push({ id: docRef.id, ...bookingData, total: totalPrice });
           updateBookingsUI();
-          alert(`✅ تم الحجز بنجاح!\nسيتم تحويلك إلى واتساب لاستلام التذكرة.`);
-          const message = `*تأكيد حجز رحلة تزكرتي*\n\n🚌 ${bus.name} (${bus.type})\n📍 من: ${extractCity(bus.from)} → إلى: ${extractCity(bus.to)}\n📅 ${date} | ⏰ الإقلاع: ${bus.depTime}\n👥 الركاب: ${passengers}\n💵 الإجمالي: ${bookingData.totalPrice.toLocaleString()} ج.س\n\n🔖 رقم الحجز: ${docRef.id.slice(0,6).toUpperCase()}\n\nشكراً لثقتكم بنا. نتمنى لكم رحلة سعيدة.`;
-          window.open(`https://wa.me/${bookingData.contactWhatsApp}?text=${encodeURIComponent(message)}`, '_blank');
-          switchTab('bookings');
-        }
-      } catch (error) { console.error("خطأ في الحجز:", error); alert("حدث خطأ أثناء عملية الحجز. الرجاء المحاولة مرة أخرى."); }
+        }).catch(err => console.error("خطأ في حفظ الحجز:", err));
+        
+        // تجهيز رسالة واتساب والتوجيه فوراً
+        const message = `*تأكيد حجز رحلة تزكرتي*\n\n` +
+          `🚌 ${bus.name} (${bus.type})\n` +
+          `📍 من: ${extractCity(bus.from)} → إلى: ${extractCity(bus.to)}\n` +
+          `📅 ${date} | ⏰ الإقلاع: ${bus.depTime}\n` +
+          `👥 الركاب: ${passengers}\n` +
+          `💵 الإجمالي: ${totalPrice.toLocaleString()} ج.س\n\n` +
+          `شكراً لثقتكم بنا. نتمنى لكم رحلة سعيدة.`;
+        
+        const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+        
+        // توجيه مباشر بدون فتح نافذة جديدة أو روابط خارجية مربكة
+        window.location.href = whatsappUrl;
+        
+        // تبديل التبويب إلى "تذاكري" في الخلفية (سيحدث بعد التوجيه إذا عاد المستخدم)
+        switchTab('bookings');
+        
+      } catch (error) {
+        console.error("خطأ في الحجز:", error);
+        alert("حدث خطأ أثناء عملية الحجز. الرجاء المحاولة مرة أخرى.");
+      }
     }
 
     function updateBookingsUI() {
@@ -640,7 +707,7 @@
             <div class="flex items-center gap-3 mb-5 text-sm font-bold"><span>${extractCity(b.from)}</span><i class="fas fa-arrow-left text-gold"></i><span>${extractCity(b.to)}</span></div>
             <div class="flex justify-between items-center border-t border-gray-50 dark:border-gray-700 pt-4">
               <div><p class="text-[10px] text-gray-400 font-bold">الركاب: ${b.passengers}</p><p class="font-black text-royalDark dark:text-white">${b.totalPrice.toLocaleString()} ج.س</p></div>
-              <a href="https://wa.me/${b.contactWhatsApp || '249123456789'}?text=${encodeURIComponent('تفاصيل الحجز: ' + b.busName + ' من ' + extractCity(b.from) + ' إلى ' + extractCity(b.to) + ' بتاريخ ' + b.date)}" class="bg-[#25D366] text-white px-5 py-3 rounded-xl text-xs font-bold flex items-center gap-2"><i class="fab fa-whatsapp text-lg"></i> تأكيد الطلب</a>
+              <a href="https://wa.me/${b.contactWhatsApp || WHATSAPP_NUMBER}?text=${encodeURIComponent('تفاصيل الحجز: ' + b.busName + ' من ' + extractCity(b.from) + ' إلى ' + extractCity(b.to) + ' بتاريخ ' + b.date)}" class="bg-[#25D366] text-white px-5 py-3 rounded-xl text-xs font-bold flex items-center gap-2"><i class="fab fa-whatsapp text-lg"></i> تأكيد الطلب</a>
             </div>
           </div>
         `).join('');
@@ -661,9 +728,10 @@
     window.onload = async () => {
       initTheme();
       await loadStates();
-      initFilterChips();
+      await loadBusFilters();
       startOnboardingIfNeeded();
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log);
+      window.addEventListener('resize', updateArrowsVisibility);
     };
 
     // تعريض الدوال للاستخدام العام
