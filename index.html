@@ -269,14 +269,19 @@
       transition: opacity 0.2s;
       pointer-events: none;
     }
-    .payment-icon {
+    /* حاوية الصورة بدلاً من الأيقونة */
+    .payment-image {
       width: 48px;
       height: 48px;
       border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
+      background: #f1f5f9;
+      overflow: hidden;
+    }
+    .dark .payment-image {
+      background: #334155;
     }
   </style>
 </head>
@@ -310,7 +315,7 @@
         <!-- يتم ملؤه ديناميكياً -->
       </div>
 
-      <!-- حقول بيانات العميل (جديد) -->
+      <!-- حقول بيانات العميل -->
       <div class="space-y-4 mb-5">
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <label class="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2"><i class="fas fa-user ml-1"></i>الاسم الرباعي الكامل</label>
@@ -330,7 +335,7 @@
         <div>
           <p class="font-bold text-royalDark dark:text-white">
               ادفع 10,000 جنيه فقط لتأمين مقعدك</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">المبلغ المتبقي يُدفع قبل  الرحلة لأستلام التزكرة فورا عبر واتساب</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">المبلغ المتبقي يُدفع قبل الرحلة لأستلام التزكرة فورا عبر واتساب</p>
         </div>
       </div>
       
@@ -341,8 +346,9 @@
         <!-- بنكك -->
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <div class="flex items-center gap-3 mb-3">
-            <div class="payment-icon bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
-              <i class="fas fa-building-columns"></i>
+            <div class="payment-image">
+              <!-- ضع رابط الصورة الحقيقية هنا -->
+              <img src="" alt="بنكك" class="w-full h-full object-contain">
             </div>
             <span class="font-black text-lg dark:text-white">بنكك</span>
           </div>
@@ -353,8 +359,8 @@
             </div>
             <div class="flex justify-between items-center">
               <span class="text-gray-500 dark:text-gray-400">رقم الحساب:</span>
-              <span class="font-mono font-bold text-lg copyable" onclick="copyToClipboard('2480512', this)" data-copy="2480512">
-                2480512
+              <span class="font-mono font-bold text-lg copyable" onclick="copyToClipboard('2480511', this)" data-copy="2480511">
+                2480511
                 <i class="far fa-copy mr-2 text-gold"></i>
                 <span class="copy-feedback">تم النسخ!</span>
               </span>
@@ -365,8 +371,9 @@
         <!-- فوري -->
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <div class="flex items-center gap-3 mb-3">
-            <div class="payment-icon bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-              <i class="fas fa-mobile-alt"></i>
+            <div class="payment-image">
+              <!-- ضع رابط الصورة الحقيقية هنا -->
+              <img src="" alt="فوري" class="w-full h-full object-contain">
             </div>
             <span class="font-black text-lg dark:text-white">فوري</span>
           </div>
@@ -380,18 +387,19 @@
           </div>
         </div>
 
-        <!-- أوكاش -->
+        <!-- ماي كاشي -->
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <div class="flex items-center gap-3 mb-3">
-            <div class="payment-icon bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-              <i class="fas fa-wallet"></i>
+            <div class="payment-image">
+              <!-- ضع رابط الصورة الحقيقية هنا -->
+              <img src="" alt="ماي كاشي" class="w-full h-full object-contain">
             </div>
-            <span class="font-black text-lg dark:text-white">أوكاش</span>
+            <span class="font-black text-lg dark:text-white">ماي كاشي</span>
           </div>
           <div class="flex justify-between items-center">
             <span class="text-gray-500 dark:text-gray-400">رقم الحساب:</span>
-            <span class="font-mono font-bold text-lg copyable" onclick="copyToClipboard('1331525', this)" data-copy="1331525">
-              1331525
+            <span class="font-mono font-bold text-lg copyable" onclick="copyToClipboard('401737159', this)" data-copy="401737159">
+              401737159
               <i class="far fa-copy mr-2 text-gold"></i>
               <span class="copy-feedback">تم النسخ!</span>
             </span>
@@ -401,8 +409,9 @@
         <!-- المشرق -->
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <div class="flex items-center gap-3 mb-3">
-            <div class="payment-icon bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-              <i class="fas fa-building-columns"></i>
+            <div class="payment-image">
+              <!-- ضع رابط الصورة الحقيقية هنا -->
+              <img src="" alt="المشرق" class="w-full h-full object-contain">
             </div>
             <span class="font-black text-lg dark:text-white">المشرق</span>
           </div>
@@ -728,7 +737,6 @@
       const fromSelect = document.getElementById('search-from');
       const toSelect = document.getElementById('search-to');
       
-      // محاولة جلب البيانات من الكاش
       const cachedStates = getCachedData('tazkarti_states');
       if (cachedStates && Array.isArray(cachedStates) && cachedStates.length > 0) {
         stateList = cachedStates;
@@ -771,7 +779,6 @@
 
     // ==================== تحميل أسماء الباصات للفلترة (مع كاش) ====================
     async function loadBusFilters() {
-      // محاولة جلب البيانات من الكاش
       const cachedFilters = getCachedData('tazkarti_bus_filters');
       if (cachedFilters && Array.isArray(cachedFilters)) {
         busNamesList = cachedFilters;
@@ -792,7 +799,6 @@
         renderFilterChips(busNamesList);
       } catch (error) {
         console.error("خطأ في تحميل أسماء الباصات:", error);
-        // أسماء افتراضية
         busNamesList = ["أبو عامر", "العزيزية", "شريان الشمال", "أبو هشام"];
         renderFilterChips(busNamesList);
       }
@@ -884,7 +890,6 @@
       
       const cacheKey = `tazkarti_buses_${from}_${to}`;
       
-      // محاولة جلب من الكاش أولاً
       const cachedBuses = getCachedData(cacheKey);
       if (cachedBuses && Array.isArray(cachedBuses)) {
         displayBuses(cachedBuses, from, to);
@@ -898,7 +903,6 @@
         let buses = []; 
         snapshot.forEach(doc => buses.push({ id: doc.id, ...doc.data() }));
         
-        // تخزين في الكاش
         setCachedData(cacheKey, buses);
         
         displayBuses(buses, from, to);
@@ -955,12 +959,10 @@
         const passengers = parseInt(document.getElementById('search-passengers').value);
         const date = document.getElementById('search-date').value;
         
-        // حفظ بيانات الرحلة الحالية للاستخدام في نافذة الدفع
         currentBookingBus = { id: busId, ...bus };
         currentBookingPassengers = passengers;
         currentBookingDate = date;
         
-        // فتح نافذة الدفع
         openPaymentModal();
         
       } catch (error) {
@@ -979,7 +981,6 @@
       const totalPrice = bus.price * passengers;
       const depositAmount = 5000; // العربون
       
-      // ملء ملخص الرحلة
       const summaryDiv = document.getElementById('paymentTripSummary');
       summaryDiv.innerHTML = `
         <div class="flex items-center gap-3 mb-2">
@@ -1001,7 +1002,6 @@
         </div>
       `;
       
-      // تفريغ حقلي الاسم والهاتف
       document.getElementById('customerFullName').value = '';
       document.getElementById('customerPhone').value = '';
       
@@ -1027,11 +1027,9 @@
     async function proceedToUploadReceipt() {
       if (!currentBookingBus) return;
       
-      // الحصول على بيانات العميل
       const fullName = document.getElementById('customerFullName').value.trim();
       const phone = document.getElementById('customerPhone').value.trim();
       
-      // التحقق من إدخال البيانات
       if (!fullName) {
         alert('الرجاء إدخال الاسم الرباعي الكامل');
         return;
@@ -1046,7 +1044,6 @@
       const date = currentBookingDate;
       const totalPrice = bus.price * passengers;
       
-      // إنشاء الحجز في Firestore
       const bookingData = {
         busId: bus.id, busName: bus.name, busType: bus.type,
         from: bus.from, to: bus.to, date,
@@ -1060,7 +1057,7 @@
         paymentAccounts: {
           bankak: '2480511',
           fawry: '51690879',
-          okash: '1331525',
+          mycashi: '401737159',
           mashreq: '64498707',
           name:'أنس أمين خليل أمين'
         }
@@ -1069,38 +1066,34 @@
       try {
         const docRef = await db.collection("bookings").add(bookingData);
         
-       // تجهيز رسالة واتساب مع تفاصيل الحجز وبيانات العميل والدفع
-const message = `✅ *تأكيد حجز رحلة تزكرتي* ✅\n\n` +
-  `*📋 بيانات العميل:*\n` +
-  `👤 الاسم: ${fullName}\n` +
-  `📞 الهاتف: ${phone}\n\n` +
-  `*🚍 تفاصيل الرحلة:*\n` +
-  `🚌 *${bus.name}* (${bus.type})\n` +
-  `📍 من: ${extractCity(bus.from)} → إلى: ${extractCity(bus.to)}\n` +
-  `📅 التاريخ: ${date} | ⏰ الإقلاع: ${bus.depTime}\n` +
-  `👥 عدد الركاب: ${passengers}\n` +
-  `💵 الإجمالي: ${totalPrice.toLocaleString()} ج.س\n` +
-  `🔖 الحجز المبدئي: 10,000 ج.س\n\n` +
-  `*💳 بيانات الدفع:*\n` +
-  `🏦 بنكك: 2480511\n` +
-  `📱 فوري: 51690879\n` +
-  `💰 أوكاش: 1331525\n` +
-  `🏦 المشرق: 64498707\n` +
-  `👤 اسم الحساب: أنس أمين خليل أمين\n\n` +
-  `✅ تم الدفع وسأرفق لك صورة الإيصال.\n` +
-  `🆔 رقم الحجز: ${docRef.id.slice(0,6)}`;
+        const message = `✅ *تأكيد حجز رحلة تزكرتي* ✅\n\n` +
+          `*📋 بيانات العميل:*\n` +
+          `👤 الاسم: ${fullName}\n` +
+          `📞 الهاتف: ${phone}\n\n` +
+          `*🚍 تفاصيل الرحلة:*\n` +
+          `🚌 *${bus.name}* (${bus.type})\n` +
+          `📍 من: ${extractCity(bus.from)} → إلى: ${extractCity(bus.to)}\n` +
+          `📅 التاريخ: ${date} | ⏰ الإقلاع: ${bus.depTime}\n` +
+          `👥 عدد الركاب: ${passengers}\n` +
+          `💵 الإجمالي: ${totalPrice.toLocaleString()} ج.س\n` +
+          `🔖 الحجز المبدئي: 10,000 ج.س\n\n` +
+          `*💳 بيانات الدفع:*\n` +
+          `🏦 بنكك: 2480511\n` +
+          `📱 فوري: 51690879\n` +
+          `💰 ماي كاشي: 401737159\n` +
+          `🏦 المشرق: 64498707\n` +
+          `👤 اسم الحساب: أنس أمين خليل أمين\n\n` +
+          `✅ تم الدفع وسأرفق لك صورة الإيصال.\n` +
+          `🆔 رقم الحجز: ${docRef.id.slice(0,6)}`;
         
         const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
         
-        // إغلاق النافذة ثم التوجيه للواتساب
         closePaymentModal();
         window.location.href = whatsappUrl;
         
-        // إضافة الحجز للقائمة المحلية
         bookings.push({ id: docRef.id, ...bookingData, total: totalPrice });
         updateBookingsUI();
         
-        // الانتقال إلى قسم "تذاكري"
         switchTab('bookings');
         
       } catch (error) {
@@ -1115,7 +1108,6 @@ const message = `✅ *تأكيد حجز رحلة تزكرتي* ✅\n\n` +
       
       try {
         await db.collection("bookings").doc(bookingId).delete();
-        // حذف من المصفوفة المحلية
         bookings = bookings.filter(b => b.id !== bookingId);
         updateBookingsUI();
       } catch (error) {
