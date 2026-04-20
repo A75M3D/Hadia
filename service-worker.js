@@ -1,165 +1,124 @@
-// ========== الأمان والحماية ==========
-function safeHTML(str) {
-    if (!str) return '';
-    
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
+const CACHE_NAME = 'Skillzoy-Academy';
+const urlsToCache = [
+  '/index.html',
+  '/script.js',
+  '/login.html',
+  '/manifest.json',
+  '/register.html',
+  // الملفات الثابتة اللي مش بتتغير
+];
 
-function displaySafeText(elementId, text) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.textContent = text;
-    }
-}
+// Install Event
+self.addEventListener('install', (event) => {
+  console.log('Service Worker: Installed');
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Service Worker: Caching Files');
+        return cache.addAll(urlsToCache);
+      })
+      .then(() => self.skipWaiting())
+  );
+});
 
-// ========== Service Worker Registration ==========
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(function(registration) {
-                console.log('✅ Service Worker registered with scope:', registration.scope);
-                
-                // تحقق إذا فيه تحديث جديد
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    console.log('🔄 New Service Worker found!');
-                    
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('📦 New content available - please refresh!');
-                            showUpdateNotification();
-                        }
-                    });
-                });
-            })
-            .catch(function(error) {
-                console.log('❌ Service Worker registration failed:', error);
-            });
-    });
+// Activate Event
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker: Activated');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Service Worker: Clearing Old Cache');
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
 
-    // تحديث الصفحة عندما يصبح الـ Service Worker جاهز
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-            refreshing = true;
-            console.log('🔄 Controller changed - reloading page');
-            window.location.reload();
-        }
-    });
-}
-
-// ========== إشعار التحديث ==========
-function showUpdateNotification() {
-    // إنشاء عنصر الإشعار
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #1e3a8a;
-        color: white;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 10000;
-        max-width: 300px;
-        font-family: Arial, sans-serif;
-    `;
+// Fetch Event
+self.addEventListener('fetch', (event) => {
+  // الملفات الديناميكية اللي بتتغير باستمرار
+  const dynamicFiles = [
+    '',
+    '/dashboard/index.html',
+    '/index.html',
+    '/ad.html',
     
-    notification.innerHTML = safeHTML(`
-        <div style="margin-bottom: 10px;">
-            <strong>تحديث جديد متاح!</strong>
-        </div>
-        <button onclick="location.reload()" style="
-            background: white;
-            color: #1e3a8a;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        ">تحديث الآن</button>
-    `);
-    
-    document.body.appendChild(notification);
-    
-    // إزالة الإشعار تلقائياً بعد 10 ثواني
-    setTimeout(() => {
-        if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-        }
-    }, 10000);
-}
-
-// ========== إدارة الحالة ==========
-const AppState = {
-    // حالة التطبيق
-    currentUser: null,
-    isOnline: navigator.onLine,
-    
-    // تهيئة التطبيق
-    init() {
-        this.setupEventListeners();
-        this.checkAuthStatus();
-        console.log('🚀 M-STORE Initialized');
-    },
-    
-    // إعداد مستمعي الأحداث
-    setupEventListeners() {
-        // أحداث الاتصال بالإنترنت
-        window.addEventListener('online', () => {
-            this.isOnline = true;
-            this.showOnlineStatus();
-        });
-        
-        window.addEventListener('offline', () => {
-            this.isOnline = false;
-            this.showOfflineStatus();
-        });
-        
-        // منع الإجراءات الافتراضية
-        document.addEventListener('contextmenu', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                return;
-            }
-            e.preventDefault();
-        });
-    },
-    
-    // التحقق من حالة المصادقة
-    checkAuthStatus() {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            this.currentUser = this.validateToken(token);
-        }
-    },
-    
-    // التحقق من صحة التوكن
-    validateToken(token) {
-        try {
-            // منطق التحقق من التوكن
-            return JSON.parse(atob(token.split('.')[1]));
-        } catch (error) {
-            localStorage.removeItem('authToken');
-            return null;
-        }
-    },
-    
-    // عرض حالة الاتصال
-    showOnlineStatus() {
-        this.showToast('✅ تم استعادة الاتصال بالإنترنت', 'success');
-    },
-    
-    showOfflineStatus() {
-        this.showToast('⚠️ أنت غير متصل بالإنترنت', 'warning');
-    },
-    
-    // عرض إشعارات
-    showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        const styles = {
-            info: 'background: #3b82f6; color: white;',
-            success: 'background: #10b981; color: white;',
+  ];
   
+  const isDynamicFile = dynamicFiles.some(file => 
+    event.request.url.includes(file)
+  );
+
+  // إذا كان طلب لملفات HTML الديناميكية
+  if (isDynamicFile) {
+    // Network First Strategy - النت أولاً
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          // إذا نجح التحميل من النت، خزن النسخة الجديدة
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseClone);
+                console.log('Service Worker: Dynamic File Updated -', event.request.url);
+              });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // إذا فشل التحميل من النت، جيب من الكاش
+          console.log('Service Worker: Using Cached Version -', event.request.url);
+          return caches.match(event.request)
+            .then((cachedResponse) => {
+              return cachedResponse || new Response('Offline - No cached version available');
+            });
+        })
+    );
+  } else {
+    // Cache First Strategy - الكاش أولاً للملفات الثابتة
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          // إذا وجد في الكاش، ارجعه
+          if (response) {
+            console.log('Service Worker: Serving from Cache -', event.request.url);
+            return response;
+          }
+          
+          // إذا مش موجود في الكاش، حمله من النت وخزنه
+          return fetch(event.request)
+            .then((fetchResponse) => {
+              // تحقق إذا كان الرد صالح للتخزين
+              if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
+                return fetchResponse;
+              }
+              
+              const responseToCache = fetchResponse.clone();
+              caches.open(CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                  console.log('Service Worker: New File Cached -', event.request.url);
+                });
+              
+              return fetchResponse;
+            })
+            .catch(() => {
+              // إذا فشل التحميل من النت
+              return new Response('Offline - Please check your connection');
+            });
+        })
+    );
+  }
+});
+
+// Listen for Messages from the Page
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
