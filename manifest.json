@@ -1,22 +1,33 @@
 {
-  "name": "HADIA Plus",
-  "short_name":"HadiA+",
+  "name": "SkillZoy Academy",
+  "short_name": "Skillzoy",
+  "description": "منصة تعليمية حديثة تقدم دورات ومهارات عملية لمواكبة سوق العمل.",
+  "id": "/?skillzoy-academy",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1e3a8a",
   "orientation": "portrait",
   "scope": "/",
+
   "icons": [
-  {
-    "src": "https://cdn-icons-png.flaticon.com/512/2331/2331966.png",
-    "sizes": "192x192",
-    "type": "image/png"
-  },
-  {
-    "src": "https://cdn-icons-png.flaticon.com/512/2331/2331966.png",
-    "sizes": "512x512",
-    "type": "image/png"
-  }
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2331/2331966.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2331/2331966.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+
+  "screenshots": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2331/2331966.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    }
   ]
 }
