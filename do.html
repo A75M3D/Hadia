@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FastApk | لوحة التحكم</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Tajawal Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background: linear-gradient(145deg, #f8fafc 0%, #eef2ff 100%);
+      color: #1e293b;
+      min-height: 100vh;
+    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 10px; }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    .header {
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(30,58,138,0.1);
+      box-shadow: 0 20px 35px -12px rgba(30,58,138,0.15);
+      border-radius: 24px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .header h1 i { color: #f59e0b; }
+
+    .card {
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(30,58,138,0.1);
+      box-shadow: 0 20px 35px -12px rgba(30,58,138,0.15);
+      border-radius: 24px;
+      padding: 1.5rem;
+      overflow: hidden;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+    th, td {
+      padding: 14px 18px;
+      text-align: right;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: #1e3a8a;
+      white-space: nowrap;
+    }
+    tr:hover { background: #f1f5f9; }
+
+    .whatsapp-link {
+      color: #16a34a;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .whatsapp-link:hover { text-decoration: underline; }
+    .copy-icon {
+      cursor: pointer;
+      color: #3b82f6;
+      margin: 0 4px;
+    }
+    .copy-icon:hover { color: #1e3a8a; }
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: 0.2s;
+    }
+    .delete-btn:hover { background: #fee2e2; }
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: #64748b;
+    }
+    /* حالات الطلب */
+    .status-select {
+      padding: 6px 10px;
+      border-radius: 20px;
+      border: 1px solid #cbd5e1;
+      font-weight: 600;
+      font-size: 0.85rem;
+      background: white;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .status-select.status-free { background: #dbeafe; color: #1e3a8a; border-color: #93c5fd; }
+    .status-select.status-processing { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .status-select.status-completed { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .status-select.status-failed { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1><i class="fas fa-crown"></i> لوحة تحكم FastApk</h1>
+      <!-- لا حاجة للتبويبات -->
+    </div>
+
+    <!-- طلبات التحويل فقط -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>الموقع</th>
+              <th>المطور</th>
+              <th>البريد</th>
+              <th>جهة الاتصال</th>
+              <th>الحالة</th>
+              <th>التاريخ</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="requestsBody">
+            <tr><td colspan="7" class="loading"><i class="fas fa-spinner fa-pulse"></i> جارٍ تحميل الطلبات...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // تهيئة Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAD-8TuY7PZ_wCpnCkgEY6zWJM7sr6PjOE",
+      authDomain: "pwa2apk-96645.firebaseapp.com",
+      projectId: "pwa2apk-96645",
+      storageBucket: "pwa2apk-96645.firebasestorage.app",
+      messagingSenderId: "32361192102",
+      appId: "1:32361192102:web:3ec47a71824f56455df267",
+      measurementId: "G-LPV8HRYN39"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // نسخ النص إلى الحافظة
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => alert('تم النسخ: ' + text));
+    }
+
+    // تحديث حالة الطلب
+    async function updateStatus(selectEl) {
+      const docId = selectEl.dataset.docid;
+      const originalStatus = selectEl.dataset.original;
+      const newStatus = selectEl.value;
+
+      if (newStatus === originalStatus) return; // لا تغيير
+
+      try {
+        await db.collection('conversionRequests').doc(docId).update({ status: newStatus });
+        selectEl.dataset.original = newStatus;
+        updateSelectStyle(selectEl, newStatus);
+      } catch (error) {
+        alert('فشل التحديث: ' + error.message);
+        selectEl.value = originalStatus; // استرجاع القيمة السابقة
+      }
+    }
+
+    // تنسيق قائمة الاختيار حسب الحالة
+    function updateSelectStyle(selectEl, status) {
+      selectEl.className = 'status-select';
+      switch (status) {
+        case 'free_request': selectEl.classList.add('status-free'); break;
+        case 'processing': selectEl.classList.add('status-processing'); break;
+        case 'completed': selectEl.classList.add('status-completed'); break;
+        case 'failed': selectEl.classList.add('status-failed'); break;
+        default: break;
+      }
+    }
+
+    // تحميل الطلبات
+    async function loadRequests() {
+      const tbody = document.getElementById('requestsBody');
+      tbody.innerHTML = '<tr><td colspan="7" class="loading"><i class="fas fa-spinner fa-pulse"></i> جارٍ تحميل الطلبات...</td></tr>';
+      try {
+        const snapshot = await db.collection('conversionRequests').orderBy('createdAt', 'desc').get();
+        tbody.innerHTML = '';
+        if (snapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="7" class="loading">لا توجد طلبات حالياً.</td></tr>';
+          return;
+        }
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const date = d.createdAt ? d.createdAt.toDate().toLocaleDateString('ar-SA') : '—';
+          const currentStatus = d.status || 'free_request';
+
+          // جهة الاتصال
+          let contactHtml = '';
+          if (d.contactMethod === 'whatsapp') {
+            contactHtml = `<a href="https://wa.me/${d.contactValue}" target="_blank" class="whatsapp-link"><i class="fab fa-whatsapp"></i> ${d.contactValue}</a>`;
+          } else if (d.contactMethod === 'email') {
+            contactHtml = `<span>${d.contactValue} <i class="fas fa-copy copy-icon" onclick="copyText('${d.contactValue}')" title="نسخ البريد"></i></span>`;
+          } else {
+            contactHtml = d.contactValue || '—';
+          }
+
+          // قائمة منسدلة للحالة
+          const statusOptions = [
+            { value: 'free_request', label: 'مجاني' },
+            { value: 'processing', label: 'قيد المعالجة' },
+            { value: 'completed', label: 'مكتمل' },
+            { value: 'failed', label: 'فشل' }
+          ];
+          const optionsHtml = statusOptions.map(opt =>
+            `<option value="${opt.value}" ${currentStatus === opt.value ? 'selected' : ''}>${opt.label}</option>`
+          ).join('');
+
+          const statusCellHtml = `
+            <td>
+              <select class="status-select" data-docid="${doc.id}" data-original="${currentStatus}" onchange="updateStatus(this)">
+                ${optionsHtml}
+              </select>
+            </td>
+          `;
+
+          const row = `
+            <tr>
+              <td><span style="cursor:pointer; color:#1e3a8a;" onclick="copyText('${d.siteUrl}')" title="نسخ الرابط">${d.siteUrl}</span></td>
+              <td>${d.userName || '—'}</td>
+              <td><span style="cursor:pointer;" onclick="copyText('${d.userEmail}')" title="نسخ البريد">${d.userEmail || '—'}</span></td>
+              <td>${contactHtml}</td>
+              ${statusCellHtml}
+              <td>${date}</td>
+              <td><button class="delete-btn" onclick="deleteRequest('${doc.id}')"><i class="fas fa-trash-alt"></i></button></td>
+            </tr>
+          `;
+          tbody.insertAdjacentHTML('beforeend', row);
+
+          // تطبيق التنسيق الأولي للقائمة
+          const lastSelect = tbody.querySelector(`select[data-docid="${doc.id}"]`);
+          if (lastSelect) updateSelectStyle(lastSelect, currentStatus);
+        });
+      } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="loading" style="color:red;">خطأ: ${error.message}</td></tr>`;
+      }
+    }
+
+    // حذف طلب
+    async function deleteRequest(id) {
+      if (confirm('هل أنت متأكد من حذف هذا الطلب؟')) {
+        await db.collection('conversionRequests').doc(id).delete();
+        loadRequests();
+      }
+    }
+
+    // تحميل أولي
+    loadRequests();
+  </script>
+</body>
+</html>
